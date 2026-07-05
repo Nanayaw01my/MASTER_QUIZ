@@ -103,8 +103,15 @@ exports.createQuiz = asyncHandler(async (req, res) => {
   if (new Date(startDate) >= new Date(endDate)) throw new ApiError(400, 'End date must be after start date');
 
   if (Array.isArray(questions) && questions.length) {
-    const count = await Question.countDocuments({ _id: { $in: questions }, subject });
-    if (count !== questions.length) throw new ApiError(400, 'All questions must belong to the quiz subject');
+    // Only approved (or legacy) questions in this subject may be added
+    const count = await Question.countDocuments({
+      _id: { $in: questions },
+      subject,
+      status: { $nin: ['pending', 'rejected'] },
+    });
+    if (count !== questions.length) {
+      throw new ApiError(400, 'All questions must be approved and belong to the quiz subject');
+    }
   }
 
   const quiz = await Quiz.create({ ...req.body, createdBy: req.user._id });

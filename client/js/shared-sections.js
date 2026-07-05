@@ -8,29 +8,37 @@ async function sectionQuestions(container) {
   container.innerHTML = loaderHtml;
   const { data: subj } = await API.get('/subjects?limit=100');
   const subjects = subj.subjects;
-  let state = { page: 1, subject: '', search: '', difficulty: '' };
+  let state = { page: 1, subject: '', search: '', difficulty: '', status: '' };
 
   const render = async () => {
     const list = document.getElementById('q-list');
     list.innerHTML = loaderHtml;
     try {
-      const { data } = await API.get('/questions', { params: { page: state.page, subject: state.subject || undefined, search: state.search || undefined, difficulty: state.difficulty || undefined } });
+      const { data } = await API.get('/questions', { params: { page: state.page, subject: state.subject || undefined, search: state.search || undefined, difficulty: state.difficulty || undefined, status: state.status || undefined } });
       if (!data.questions.length) { list.innerHTML = emptyHtml('No questions found'); return; }
       list.innerHTML = `<div class="table-wrap"><table>
-        <thead><tr><th>Question</th><th>Subject</th><th>Type</th><th>Topic</th><th>Difficulty</th><th>Marks</th><th></th></tr></thead>
-        <tbody>${data.questions.map((q) => `
+        <thead><tr><th>Question</th><th>Subject</th><th>Type</th><th>Status</th><th>Difficulty</th><th>Marks</th><th></th></tr></thead>
+        <tbody>${data.questions.map((q) => {
+          const pending = q.status === 'pending';
+          const statusBadge = q.status === 'pending' ? '<span class="badge amber">pending</span>'
+            : q.status === 'rejected' ? '<span class="badge red">rejected</span>'
+            : '<span class="badge green">approved</span>';
+          return `
           <tr>
-            <td style="white-space:normal;max-width:340px">${esc(q.text.slice(0, 90))}${q.text.length > 90 ? '…' : ''}</td>
+            <td style="white-space:normal;max-width:320px">${q.source === 'ai' ? '✨ ' : ''}${esc(q.text.slice(0, 84))}${q.text.length > 84 ? '…' : ''}</td>
             <td>${esc(q.subject?.code || '')}</td>
             <td><span class="badge blue">${esc(q.type)}</span></td>
-            <td>${esc(q.topic)}</td>
+            <td>${statusBadge}</td>
             <td><span class="badge ${q.difficulty === 'hard' ? 'red' : q.difficulty === 'easy' ? 'green' : 'amber'}">${esc(q.difficulty)}</span></td>
             <td>${q.marks}</td>
-            <td>
+            <td style="display:flex;gap:5px;flex-wrap:wrap">
+              ${pending ? `<button class="btn success sm" onclick="approveQuestion('${q._id}')">Approve</button>
+                           <button class="btn danger sm" onclick="rejectQuestion('${q._id}')">Reject</button>` : ''}
               <button class="btn secondary sm" onclick='questionModal(${attrJson(q)})'>Edit</button>
               <button class="btn danger sm" onclick="deleteQuestion('${q._id}')">Del</button>
             </td>
-          </tr>`).join('')}</tbody></table></div>
+          </tr>`;
+        }).join('')}</tbody></table></div>
         <div class="pagination" id="q-pages"></div>`;
       renderPagination(document.getElementById('q-pages'), data.page, data.pages, (p) => { state.page = p; render(); });
     } catch (err) { list.innerHTML = emptyHtml(apiError(err)); }
@@ -40,23 +48,36 @@ async function sectionQuestions(container) {
     <div class="card">
       <div class="toolbar">
         <select id="q-subject"><option value="">All subjects</option>${subjects.map((s) => `<option value="${s._id}">${esc(s.name)}</option>`).join('')}</select>
+        <select id="q-status"><option value="">Any status</option><option value="pending">⏳ Pending approval</option><option value="approved">✓ Approved</option><option value="rejected">✗ Rejected</option></select>
         <select id="q-diff"><option value="">Any difficulty</option><option>easy</option><option>medium</option><option>hard</option></select>
         <input id="q-search" placeholder="Search questions…">
         <span class="spacer"></span>
+        <button class="btn secondary" id="q-approve-all">Approve pending</button>
         <button class="btn secondary" id="q-import">Import CSV</button>
         <button class="btn secondary" id="q-export">Export CSV</button>
+        <button class="btn" id="q-generate">✨ Generate with AI</button>
         <button class="btn" id="q-new">+ New Question</button>
       </div>
       <div id="q-list"></div>
     </div>`;
 
   document.getElementById('q-subject').onchange = (e) => { state.subject = e.target.value; state.page = 1; render(); };
+  document.getElementById('q-status').onchange = (e) => { state.status = e.target.value; state.page = 1; render(); };
   document.getElementById('q-diff').onchange = (e) => { state.difficulty = e.target.value; state.page = 1; render(); };
   let deb;
   document.getElementById('q-search').oninput = (e) => { clearTimeout(deb); deb = setTimeout(() => { state.search = e.target.value; state.page = 1; render(); }, 400); };
   document.getElementById('q-new').onclick = () => questionModal(null, subjects, render);
+  document.getElementById('q-generate').onclick = () => generateQuestionsModal(subjects, render);
   document.getElementById('q-export').onclick = () => downloadCsv(`/api/questions/export${state.subject ? `?subject=${state.subject}` : ''}`, 'questions.csv');
   document.getElementById('q-import').onclick = () => importQuestionsModal(subjects, render);
+  document.getElementById('q-approve-all').onclick = async () => {
+    if (!(await confirmModal('Approve ALL pending questions' + (state.subject ? ' in this subject' : '') + '?'))) return;
+    try {
+      const { data } = await API.patch(`/questions/approve-all${state.subject ? `?subject=${state.subject}` : ''}`);
+      toast(`Approved ${data.approved} question(s)`, 'success');
+      render();
+    } catch (err) { toast(apiError(err), 'error'); }
+  };
 
   window._qSubjects = subjects; // for edit modal
   window._qRefresh = render;
@@ -127,6 +148,68 @@ async function deleteQuestion(id) {
     toast('Question deleted', 'success');
     window._qRefresh();
   } catch (err) { toast(apiError(err), 'error'); }
+}
+
+async function approveQuestion(id) {
+  try {
+    await API.patch(`/questions/${id}/status`, { status: 'approved' });
+    toast('Question approved', 'success');
+    window._qRefresh();
+  } catch (err) { toast(apiError(err), 'error'); }
+}
+
+async function rejectQuestion(id) {
+  try {
+    await API.patch(`/questions/${id}/status`, { status: 'rejected' });
+    toast('Question rejected', 'success');
+    window._qRefresh();
+  } catch (err) { toast(apiError(err), 'error'); }
+}
+
+// AI generation modal
+function generateQuestionsModal(subjects, refresh) {
+  const m = openModal(`
+    <h2>✨ Generate Questions with AI</h2>
+    <p class="hint" style="margin-bottom:14px">Claude will draft questions for the chosen subject and topic. They are saved as <strong>pending</strong> and the subject's teachers are asked to approve before students see them.</p>
+    <div class="form-group"><label>Subject</label>
+      <select id="ai-subject">${subjects.map((s) => `<option value="${s._id}">${esc(s.name)}</option>`).join('')}</select></div>
+    <div class="form-group"><label>Topic <span style="opacity:.6">(optional but recommended)</span></label>
+      <input id="ai-topic" placeholder="e.g. Photosynthesis, Fractions, World War II"></div>
+    <div class="form-row">
+      <div class="form-group"><label>How many?</label><input type="number" id="ai-count" min="1" max="20" value="5"></div>
+      <div class="form-group"><label>Difficulty</label>
+        <select id="ai-diff"><option value="mixed">Mixed</option><option value="easy">Easy</option><option value="medium">Medium</option><option value="hard">Hard</option></select></div>
+    </div>
+    <div class="form-group"><label>Question type</label>
+      <select id="ai-type"><option value="mixed">Mixed</option><option value="mcq">Multiple choice</option><option value="truefalse">True / False</option><option value="fillblank">Fill in the blank</option></select></div>
+    <div id="ai-result" style="font-size:.9rem"></div>
+    <div class="modal-actions">
+      <button class="btn secondary" onclick="closeModal()">Close</button>
+      <button class="btn" id="ai-go">Generate</button>
+    </div>`);
+
+  m.querySelector('#ai-go').onclick = async () => {
+    const btn = m.querySelector('#ai-go');
+    const box = m.querySelector('#ai-result');
+    btn.disabled = true; btn.textContent = 'Generating…';
+    box.innerHTML = '<div class="loader"></div><div style="text-align:center" class="hint">This can take 10–30 seconds…</div>';
+    try {
+      const { data } = await API.post('/questions/generate', {
+        subject: m.querySelector('#ai-subject').value,
+        topic: m.querySelector('#ai-topic').value.trim(),
+        count: Number(m.querySelector('#ai-count').value) || 5,
+        difficulty: m.querySelector('#ai-diff').value,
+        type: m.querySelector('#ai-type').value,
+      });
+      box.innerHTML = `<span class="badge green">Done</span> Generated <strong>${data.generated}</strong> question(s) — now pending approval${data.failed ? `, ${data.failed} skipped` : ''}.`;
+      toast(`Generated ${data.generated} questions (pending approval)`, 'success', 6000);
+      refresh();
+    } catch (err) {
+      box.innerHTML = `<span class="badge red">Failed</span> ${esc(apiError(err))}`;
+      toast(apiError(err), 'error', 6000);
+    }
+    btn.disabled = false; btn.textContent = 'Generate';
+  };
 }
 
 function importQuestionsModal(subjects, refresh) {
@@ -274,7 +357,7 @@ async function quizModal(quizId) {
     const box = m.querySelector('#z-qpick');
     box.innerHTML = loaderHtml;
     try {
-      const { data } = await API.get('/questions', { params: { subject: subjectId, limit: 100 } });
+      const { data } = await API.get('/questions', { params: { subject: subjectId, limit: 100, status: 'approved' } });
       box.innerHTML = data.questions.length
         ? data.questions.map((q) => `
           <div class="checkbox-row" style="margin-bottom:6px">

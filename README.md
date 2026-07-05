@@ -109,6 +109,7 @@ fillblank,Capital of Ghana?,,,,,Accra,Geography,medium,2
 5. Set environment variables:
    `MONGO_URI`, `JWT_SECRET`, `JWT_REFRESH_SECRET`,
    `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`,
+   `ANTHROPIC_API_KEY` (for AI question generation — optional),
    `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `NODE_ENV=production`.
 6. After the first deploy, run the seed once from Render **Shell**: `npm run seed`.
 
