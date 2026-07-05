@@ -550,6 +550,14 @@ tbody tr:last-child td { border-bottom: none; }
 
 /* ---------------- Responsive ---------------- */
 .menu-toggle { display: none; background: none; border: none; font-size: 1.4rem; color: var(--text); cursor: pointer; }
+/* Dim backdrop shown behind the mobile sidebar; tapping it auto-hides the menu */
+.sidebar-overlay {
+  position: fixed; inset: 0; z-index: 45;
+  background: rgba(20, 16, 4, 0.5);
+  opacity: 0; visibility: hidden; transition: opacity 0.25s;
+}
+.sidebar-overlay.show { opacity: 1; visibility: visible; }
+@media (min-width: 861px) { .sidebar-overlay { display: none; } } /* desktop keeps the sidebar pinned */
 @media (max-width: 860px) {
   .sidebar { transform: translateX(-100%); box-shadow: 20px 0 60px rgba(60, 50, 10, 0.15); }
   .sidebar.open { transform: none; }

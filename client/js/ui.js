@@ -130,17 +130,24 @@ function buildShell({ title, items, user, onNav }) {
         </header>
         <main class="content" id="content"></main>
       </div>
+      <div class="sidebar-overlay" id="sidebar-overlay"></div>
     </div>`;
 
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  const openSidebar = () => { sidebar.classList.add('open'); overlay.classList.add('show'); };
+  const closeSidebar = () => { sidebar.classList.remove('open'); overlay.classList.remove('show'); };
+
   document.getElementById('theme-btn').onclick = toggleTheme;
-  document.getElementById('menu-toggle').onclick = () => document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('menu-toggle').onclick = () => sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
+  overlay.onclick = closeSidebar;           // tap outside auto-hides the sidebar
   document.getElementById('notif-btn').onclick = () => { location.hash = 'notifications'; };
 
   const navigate = (id) => {
     document.querySelectorAll('#side-nav a').forEach((a) => a.classList.toggle('active', a.dataset.id === id));
     const item = items.find((i) => i.id === id);
     document.getElementById('page-title').textContent = item ? item.label : title;
-    document.getElementById('sidebar').classList.remove('open');
+    closeSidebar(); // auto-hide after picking a menu item
     onNav(id);
   };
 
