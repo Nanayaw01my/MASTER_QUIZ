@@ -4,8 +4,8 @@
 
 // ---------------- Theme ----------------
 function initTheme() {
-  // Dark is the flagship look for the black & gold theme
-  const saved = localStorage.getItem('qm_theme') || 'dark';
+  // Light (yellow & white) is the default look; dark is optional via the toggle
+  const saved = localStorage.getItem('qm_theme') || 'light';
   document.documentElement.dataset.theme = saved;
 }
 function toggleTheme() {
