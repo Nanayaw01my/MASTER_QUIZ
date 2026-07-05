@@ -1,9 +1,10 @@
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const ClassModel = require('../models/ClassModel');
 const ApiError = require('../utils/ApiError');
 const asyncHandler = require('../utils/asyncHandler');
-const { logActivity } = require('../utils/helpers');
+const { logActivity, notify } = require('../utils/helpers');
 const { signAccessToken, signRefreshToken, setRefreshCookie, clearRefreshCookie } = require('../utils/tokens');
 const { uploadImage: cloudUpload, isConfigured: cloudinaryReady } = require('../config/cloudinary');
 
@@ -20,6 +21,47 @@ const publicUser = (u) => ({
   regNumber: u.regNumber,
   phone: u.phone,
   hasFaceReference: Array.isArray(u.faceDescriptor) && u.faceDescriptor.length > 0,
+});
+
+// GET /api/auth/classes  (public - for the registration dropdown)
+exports.publicClasses = asyncHandler(async (req, res) => {
+  const classes = await ClassModel.find().select('name level').sort('name');
+  res.json({ success: true, classes });
+});
+
+// POST /api/auth/register  (public student self-registration)
+exports.register = asyncHandler(async (req, res) => {
+  const { name, email, password, classRef, regNumber, phone } = req.body;
+  if (!name || !email || !password) throw new ApiError(400, 'Name, email and password are required');
+  if (String(password).length < 6) throw new ApiError(400, 'Password must be at least 6 characters');
+
+  const exists = await User.findOne({ email: String(email).toLowerCase() });
+  if (exists) throw new ApiError(409, 'An account with this email already exists');
+
+  // A class must be chosen so the student sees the right quizzes
+  if (!classRef) throw new ApiError(400, 'Please select your class');
+  const cls = await ClassModel.exists({ _id: classRef });
+  if (!cls) throw new ApiError(400, 'Selected class is invalid');
+
+  // Role is forced to student - self-signup can never create staff accounts
+  const user = await User.create({
+    name: String(name).slice(0, 100),
+    email,
+    password,
+    role: 'student',
+    classRef,
+    regNumber: regNumber ? String(regNumber).slice(0, 40) : undefined,
+    phone: phone ? String(phone).slice(0, 30) : undefined,
+  });
+
+  logActivity(user._id, 'self-register', `Student self-registered: ${user.email}`, req.ip);
+  // Let admins know a new student joined
+  User.find({ role: 'admin' }).distinct('_id').then((admins) =>
+    notify(admins, { title: 'New Student Registered', message: `${user.name} created an account.`, type: 'system' })
+  ).catch(() => {});
+
+  setRefreshCookie(res, signRefreshToken(user));
+  res.status(201).json({ success: true, token: signAccessToken(user), user: publicUser(user) });
 });
 
 // POST /api/auth/login

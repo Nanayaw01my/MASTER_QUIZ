@@ -148,16 +148,17 @@ const Proctor = {
       } catch (e) { /* detection hiccup - skip frame */ }
     }, 1600);
 
-    // Phone detection loop (~every 4s)
+    // Phone detection loop (~every 2.5s). A shorter cooldown means a phone
+    // held in view accrues warnings quickly and reaches the auto-submit limit.
     if (this.objectModel) {
       this.phoneLoop = setInterval(async () => {
         if (!this.running || !this.video || this.video.readyState < 2) return;
         try {
-          const preds = await this.objectModel.detect(this.video);
-          const phone = preds.find((p) => p.class === 'cell phone' && p.score > 0.55);
-          if (phone) throttled('phone-detected', `Confidence ${(phone.score * 100).toFixed(0)}%`, 15000);
+          const preds = await this.objectModel.detect(this.video, 5);
+          const phone = preds.find((p) => p.class === 'cell phone' && p.score > 0.5);
+          if (phone) throttled('phone-detected', `Confidence ${(phone.score * 100).toFixed(0)}%`, 5000);
         } catch (e) { /* skip frame */ }
-      }, 4000);
+      }, 2500);
     }
   },
 

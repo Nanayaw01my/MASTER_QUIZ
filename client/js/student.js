@@ -13,6 +13,8 @@ const SECTIONS = [
   { id: 'profile', icon: '👤', label: 'Profile' },
 ];
 
+let _cdTimer = null; // handle for the live-countdown interval (declared before buildShell runs onNav)
+
 buildShell({
   title: 'Student Dashboard',
   items: SECTIONS,
@@ -20,6 +22,7 @@ buildShell({
   onNav: (id) => {
     const c = document.getElementById('content');
     destroyCharts?.();
+    clearInterval(_cdTimer); // stop any live countdowns from the previous view
     switch (id) {
       case 'dashboard': return renderDashboard(c);
       case 'subjects': return renderMySubjects(c);
@@ -32,6 +35,53 @@ buildShell({
   },
 });
 
+// ---------------------------------------------------------- Live countdowns
+
+/** Human-readable countdown like "2d 3h 10m" or "04:32". */
+function countdownStr(ms) {
+  const s = Math.max(0, Math.floor(ms / 1000));
+  const d = Math.floor(s / 86400);
+  const h = Math.floor((s % 86400) / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  if (d > 0) return `${d}d ${h}h ${m}m`;
+  if (h > 0) return `${h}h ${m}m ${String(sec).padStart(2, '0')}s`;
+  return `${m}:${String(sec).padStart(2, '0')}`;
+}
+
+/**
+ * Animate every [data-cd] element on the page. When an "upcoming" quiz's
+ * start time passes, refresh() is called once so the card becomes playable.
+ */
+function mountCountdowns(refresh) {
+  clearInterval(_cdTimer);
+  const els = [...document.querySelectorAll('[data-cd]')];
+  if (!els.length) return;
+  let refreshed = false;
+  const tick = () => {
+    const now = Date.now();
+    let startExpired = false;
+    els.forEach((el) => {
+      const target = new Date(el.dataset.cd).getTime();
+      const kind = el.dataset.cdkind; // 'start' | 'end'
+      const diff = target - now;
+      if (diff <= 0) {
+        if (kind === 'start') { startExpired = true; el.textContent = '🟢 Available now'; }
+        else el.textContent = '⏱️ Ended';
+      } else {
+        el.textContent = (kind === 'start' ? '⏳ Starts in ' : '⏱️ Ends in ') + countdownStr(diff);
+      }
+    });
+    if (startExpired && !refreshed && refresh) {
+      refreshed = true;
+      clearInterval(_cdTimer);
+      setTimeout(refresh, 900);
+    }
+  };
+  tick();
+  _cdTimer = setInterval(tick, 1000);
+}
+
 const quizCard = (z) => {
   const now = new Date();
   const start = new Date(z.startDate), end = new Date(z.endDate);
@@ -39,6 +89,12 @@ const quizCard = (z) => {
   const upcoming = start > now;
   const remaining = z.maxAttempts - (z.myAttempts?.used || 0);
   const canTake = isActive && (remaining > 0 || z.myAttempts?.inProgress);
+  // Live countdown: to start for upcoming quizzes, to close for active ones
+  const countdown = upcoming
+    ? `<span data-cd="${start.toISOString()}" data-cdkind="start"></span>`
+    : isActive
+    ? `<span data-cd="${end.toISOString()}" data-cdkind="end"></span>`
+    : '⏱️ Ended';
   return `
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
@@ -48,7 +104,10 @@ const quizCard = (z) => {
       <p style="font-size:.85rem;color:var(--text-muted);margin:8px 0">
         ${esc(z.subject?.name || '')} · ${z.duration} min · Pass: ${z.passMark}%
       </p>
-      <p style="font-size:.8rem">🕐 ${fmtDate(z.startDate)} → ${fmtDate(z.endDate)}</p>
+      <div style="font-size:.95rem;font-weight:700;color:var(--primary-hover);background:var(--primary-soft);border:1px solid var(--border);border-radius:10px;padding:8px 12px;margin:8px 0;font-variant-numeric:tabular-nums">
+        ${countdown}
+      </div>
+      <p style="font-size:.78rem;color:var(--text-muted)">🕐 ${fmtDate(z.startDate)} → ${fmtDate(z.endDate)}</p>
       <p style="font-size:.8rem;margin:6px 0 12px">
         Attempts: ${z.myAttempts?.used || 0}/${z.maxAttempts}
         ${z.myAttempts?.best ? ` · Best: <strong>${z.myAttempts.best}%</strong>` : ''}
@@ -62,9 +121,10 @@ const quizCard = (z) => {
 };
 
 function startQuiz(quizId) {
-  // Quizzes require a desktop/laptop for proctoring reliability
-  if (/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)) {
-    return toast('Quizzes must be taken on a desktop or laptop computer with a webcam.', 'warning', 6000);
+  // Quizzes can be taken on phones, tablets, laptops or desktops -
+  // any device with a working front camera.
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    return toast('Your browser does not support camera access. Try Chrome or Safari.', 'error', 6000);
   }
   location.href = `/quiz.html?quiz=${quizId}`;
 }
@@ -100,7 +160,10 @@ async function renderDashboard(c) {
           </table></div>` : emptyHtml('No results yet')}
         </div>
       </div>
-      ${active.length ? `<h3 style="margin:6px 0 14px">Available now</h3><div class="grid cols-2">${active.map(quizCard).join('')}</div>` : ''}`;
+      ${active.length ? `<h3 style="margin:6px 0 14px">🟢 Available now</h3><div class="grid cols-2">${active.map(quizCard).join('')}</div>` : ''}
+      ${upcoming.length ? `<h3 style="margin:18px 0 14px">⏳ Upcoming quizzes</h3><div class="grid cols-2">${upcoming.map(quizCard).join('')}</div>` : ''}`;
+
+    mountCountdowns(() => renderDashboard(c));
 
     const hist = [...res.results].reverse();
     destroyCharts();
@@ -149,6 +212,7 @@ async function renderQuizzes(c) {
       .filter(([, list]) => list.length)
       .map(([label, list]) => `<h3 style="margin:6px 0 14px">${label}</h3><div class="grid cols-2">${list.map(quizCard).join('')}</div>`)
       .join('');
+    mountCountdowns(() => renderQuizzes(c));
   } catch (err) { c.innerHTML = emptyHtml(apiError(err)); }
 }
 

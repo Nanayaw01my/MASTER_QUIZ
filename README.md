@@ -116,8 +116,11 @@ fillblank,Capital of Ghana?,,,,,Accra,Geography,medium,2
 > Rotate any credential that has ever been shared.
 
 ### Exam page requirements
-Quizzes must be taken on a **desktop/laptop with a webcam** over **HTTPS**
-(the browser blocks camera access on insecure origins — Render provides HTTPS automatically).
+Quizzes can be taken on **any device with a front-facing camera** — phone, tablet,
+laptop or desktop — over **HTTPS** (browsers block camera access on insecure origins;
+Render provides HTTPS automatically). Fullscreen lock is enforced on desktop and
+Android; on iOS (which has no page-fullscreen API) the other proctoring checks —
+face detection, phone detection, tab-switch and camera monitoring — still apply.
 
 ---
 

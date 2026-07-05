@@ -43,6 +43,65 @@ document.getElementById('show-login').onclick = (e) => {
   document.getElementById('login-form').style.display = 'block';
 };
 
+// ---- Student self-registration ----
+const goToDash = (role) => {
+  location.href = role === 'admin' ? '/admin.html' : role === 'teacher' ? '/teacher.html' : '/student.html';
+};
+
+let classesLoaded = false;
+async function loadRegisterClasses() {
+  if (classesLoaded) return;
+  const sel = document.getElementById('r-class');
+  try {
+    const { data } = await API.get('/auth/classes');
+    if (!data.classes.length) {
+      sel.innerHTML = '<option value="">No classes available — contact admin</option>';
+      return;
+    }
+    sel.innerHTML = '<option value="">Select your class</option>' +
+      data.classes.map((c) => `<option value="${c._id}">${c.name}${c.level ? ` (${c.level})` : ''}</option>`).join('');
+    classesLoaded = true;
+  } catch (err) {
+    sel.innerHTML = '<option value="">Could not load classes</option>';
+  }
+}
+
+document.getElementById('show-register').onclick = (e) => {
+  e.preventDefault();
+  document.getElementById('login-form').style.display = 'none';
+  document.getElementById('register-form').style.display = 'block';
+  loadRegisterClasses();
+};
+document.getElementById('show-login-2').onclick = (e) => {
+  e.preventDefault();
+  document.getElementById('register-form').style.display = 'none';
+  document.getElementById('login-form').style.display = 'block';
+};
+
+document.getElementById('register-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('register-btn');
+  btn.disabled = true;
+  btn.textContent = 'Creating…';
+  try {
+    const { data } = await API.post('/auth/register', {
+      name: document.getElementById('r-name').value.trim(),
+      email: document.getElementById('r-email').value.trim(),
+      classRef: document.getElementById('r-class').value,
+      regNumber: document.getElementById('r-reg').value.trim(),
+      password: document.getElementById('r-password').value,
+    });
+    Auth.token = data.token;
+    Auth.user = data.user;
+    toast(`Welcome, ${data.user.name}! Account created.`, 'success');
+    setTimeout(() => goToDash(data.user.role), 500);
+  } catch (err) {
+    toast(apiError(err), 'error');
+    btn.disabled = false;
+    btn.textContent = 'Create Account';
+  }
+});
+
 document.getElementById('forgot-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   try {

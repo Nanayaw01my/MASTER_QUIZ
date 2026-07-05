@@ -43,8 +43,8 @@ app.use(
   rateLimit({ windowMs: 15 * 60 * 1000, max: 600, standardHeaders: true, legacyHeaders: false })
 );
 app.use(
-  ['/api/auth/login', '/api/auth/forgot-password', '/api/auth/reset-password'],
-  rateLimit({ windowMs: 15 * 60 * 1000, max: 20, message: { success: false, message: 'Too many attempts, try again later' } })
+  ['/api/auth/login', '/api/auth/register', '/api/auth/forgot-password', '/api/auth/reset-password'],
+  rateLimit({ windowMs: 15 * 60 * 1000, max: 30, message: { success: false, message: 'Too many attempts, try again later' } })
 );
 
 // ------------------------------------------------------------ API routes

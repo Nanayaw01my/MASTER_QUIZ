@@ -18,6 +18,18 @@ let warningCount = 0;
 let warningLimit = 3;
 let fullscreenExits = 0;
 
+// Fullscreen enforcement only applies where the browser supports it.
+// iOS Safari has no Fullscreen API for page elements, so we skip it there
+// rather than falsely auto-submitting phone/tablet students.
+const fsRequest = document.documentElement.requestFullscreen
+  || document.documentElement.webkitRequestFullscreen;
+const fullscreenSupported = !!fsRequest;
+let fullscreenEngaged = false;
+const enterFullscreen = async () => {
+  if (!fullscreenSupported) return;
+  try { await fsRequest.call(document.documentElement); fullscreenEngaged = true; } catch { /* user gesture needed */ }
+};
+
 // ------------------------------------------------------------ Pre-check
 (async function precheck() {
   try {
@@ -98,8 +110,8 @@ async function beginExam() {
   $('exam').style.display = 'block';
   $('ex-title').textContent = attempt.quiz.title;
 
-  // Fullscreen is mandatory
-  try { await document.documentElement.requestFullscreen(); } catch { /* browser refused */ }
+  // Fullscreen where supported (desktop + Android); skipped on iOS
+  await enterFullscreen();
 
   Proctor.rebind($('ex-video'), $('ex-overlay'));
   $('ex-dot').classList.add('ok');
@@ -206,16 +218,22 @@ function installAntiCheatListeners() {
     if (!submitted) reportViolation('window-blur', 'Window lost focus');
   });
 
-  // Fullscreen exit -> warning, repeated -> auto-submit via warning limit
-  document.addEventListener('fullscreenchange', async () => {
-    if (submitted || document.fullscreenElement) return;
-    fullscreenExits += 1;
-    await reportViolation('fullscreen-exit', `Exit #${fullscreenExits}`);
-    if (!submitted) {
-      showWarning('Return to fullscreen immediately!');
-      try { await document.documentElement.requestFullscreen(); } catch { /* user must click */ }
-    }
-  });
+  // Fullscreen exit -> warning, repeated -> auto-submit via warning limit.
+  // Only enforced where fullscreen actually engaged (desktop/Android).
+  if (fullscreenSupported) {
+    const onFsChange = async () => {
+      const inFs = document.fullscreenElement || document.webkitFullscreenElement;
+      if (submitted || inFs || !fullscreenEngaged) return;
+      fullscreenExits += 1;
+      await reportViolation('fullscreen-exit', `Exit #${fullscreenExits}`);
+      if (!submitted) {
+        showWarning('Return to fullscreen immediately!');
+        enterFullscreen();
+      }
+    };
+    document.addEventListener('fullscreenchange', onFsChange);
+    document.addEventListener('webkitfullscreenchange', onFsChange);
+  }
 
   // Block context menu, copy, devtools-ish shortcuts (deterrent only)
   document.addEventListener('contextmenu', (e) => e.preventDefault());
@@ -329,7 +347,10 @@ async function submitExam(reason, isAuto) {
 function cleanupExam() {
   clearInterval(timerInt);
   Proctor.stop();
-  if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  const exit = document.exitFullscreen || document.webkitExitFullscreen;
+  if ((document.fullscreenElement || document.webkitFullscreenElement) && exit) {
+    exit.call(document).catch(() => {});
+  }
 }
 
 function showDone({ title, message, result, isViolation }) {
