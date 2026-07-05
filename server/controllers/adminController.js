@@ -9,27 +9,49 @@ const ActivityLog = require('../models/ActivityLog');
 const ApiError = require('../utils/ApiError');
 const asyncHandler = require('../utils/asyncHandler');
 const { logActivity, paginate, escapeRegex, notify } = require('../utils/helpers');
-const { isConfigured: cloudinaryReady, uploadImage: cloudUpload, deleteImage } = require('../config/cloudinary');
+const { cloudinary, isConfigured: cloudinaryReady, uploadImage: cloudUpload, deleteImage } = require('../config/cloudinary');
 
-// GET /api/admin/cloudinary-test  - verify image storage works (runs on the live server)
+// Pull the human-readable reason out of whatever shape the Cloudinary SDK throws
+const cloudErr = (e) =>
+  e?.error?.message || e?.message || (typeof e === 'string' ? e : 'Unknown error');
+
+// GET /api/admin/cloudinary-test  - diagnose image storage on the live server
 exports.testCloudinary = asyncHandler(async (req, res) => {
-  const present = {
-    CLOUDINARY_CLOUD_NAME: !!process.env.CLOUDINARY_CLOUD_NAME,
-    CLOUDINARY_API_KEY: !!process.env.CLOUDINARY_API_KEY,
-    CLOUDINARY_API_SECRET: !!process.env.CLOUDINARY_API_SECRET,
-  };
   if (!cloudinaryReady()) {
-    const missing = Object.keys(present).filter((k) => !present[k]);
-    return res.json({ success: false, message: `Missing Cloudinary variable(s): ${missing.join(', ')}`, present });
+    return res.json({
+      success: false,
+      message: 'No Cloudinary credentials are set. Add CLOUDINARY_URL (or the three CLOUDINARY_* variables) in Render.',
+    });
   }
-  // 1x1 transparent PNG
+
+  const cfg = cloudinary.config();
+  const info = { cloudName: cfg.cloud_name || '(unset)', apiKeyTail: String(cfg.api_key || '').slice(-4) };
+
+  // Step 1: validate the key + secret + cloud via the Admin API (clear JSON errors)
+  try {
+    await cloudinary.api.ping();
+    info.credentials = 'valid';
+  } catch (e) {
+    info.credentials = 'invalid';
+    return res.json({
+      success: false,
+      message: `Credentials rejected by Cloudinary (cloud "${info.cloudName}", key …${info.apiKeyTail}): ${cloudErr(e)}. Make sure the cloud name, API key and secret all come from the SAME product environment.`,
+      info,
+    });
+  }
+
+  // Step 2: credentials are valid - now try an actual image upload
   const img = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M8AAAMBAQDJ/pLvAAAAAElFTkSuQmCC';
   try {
     const r = await cloudUpload(img, 'quiz-master/test');
     await deleteImage(r.publicId);
-    res.json({ success: true, message: 'Cloudinary is connected — photos will be saved.', present });
-  } catch (err) {
-    res.json({ success: false, message: `Cloudinary rejected the upload: ${err.message}`, present });
+    res.json({ success: true, message: `Connected to Cloudinary "${info.cloudName}" — photos will be saved.`, info });
+  } catch (e) {
+    res.json({
+      success: false,
+      message: `Credentials are valid but the image upload was blocked: ${cloudErr(e)}. Check Settings → Security in Cloudinary for upload restrictions, and confirm your account email is verified.`,
+      info,
+    });
   }
 });
 

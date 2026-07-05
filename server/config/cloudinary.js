@@ -1,10 +1,16 @@
 const cloudinary = require('cloudinary').v2;
 
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
+// If CLOUDINARY_URL is set (cloudinary://key:secret@cloud), the SDK auto-configures
+// from it on require - the safest option since all three parts are guaranteed to
+// belong to the same product environment. Otherwise use the three separate vars.
+if (!process.env.CLOUDINARY_URL) {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+    secure: true,
+  });
+}
 
 /**
  * Upload a base64 data-URI or a buffer to Cloudinary.
@@ -39,6 +45,9 @@ const deleteImage = async (publicId) => {
 };
 
 const isConfigured = () =>
-  Boolean(process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET);
+  Boolean(
+    process.env.CLOUDINARY_URL ||
+      (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET)
+  );
 
 module.exports = { cloudinary, uploadImage, deleteImage, isConfigured };
