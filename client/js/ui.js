@@ -4,16 +4,16 @@
 
 // ---------------- Theme ----------------
 function initTheme() {
-  // Light (yellow & white) is the default look; dark is optional via the toggle
-  const saved = localStorage.getItem('qm_theme') || 'light';
+  // Dark slate (matching the login) is the default; light is optional via the toggle
+  const saved = localStorage.getItem('qm_theme') || 'dark';
   document.documentElement.dataset.theme = saved;
 }
 function toggleTheme() {
-  const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+  const next = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
   document.documentElement.dataset.theme = next;
   localStorage.setItem('qm_theme', next);
   const btn = document.getElementById('theme-btn');
-  if (btn) btn.textContent = next === 'dark' ? '☀️' : '🌙';
+  if (btn) btn.innerHTML = next === 'light' ? svgIcon('moon') : svgIcon('sun');
 }
 initTheme();
 
@@ -106,9 +106,9 @@ function buildShell({ title, items, user, onNav }) {
   document.body.innerHTML = `
     <div class="app">
       <aside class="sidebar" id="sidebar">
-        <div class="brand"><span class="logo">🎓</span> Quiz Master</div>
+        <div class="brand"><span class="logo">${svgIcon('cap', 20)}</span> Quiz Master</div>
         <nav id="side-nav">
-          ${items.map((i) => `<a href="#${i.id}" data-id="${i.id}"><span>${i.icon}</span> ${esc(i.label)}</a>`).join('')}
+          ${items.map((i) => `<a href="#${i.id}" data-id="${i.id}"><span class="nav-ico">${svgIcon(i.icon, 19)}</span> ${esc(i.label)}</a>`).join('')}
         </nav>
         <div class="sidebar-footer">
           Logged in as <strong>${esc(user.name)}</strong><br>
@@ -118,12 +118,12 @@ function buildShell({ title, items, user, onNav }) {
       <div class="main">
         <header class="topbar">
           <div style="display:flex;align-items:center;gap:12px">
-            <button class="menu-toggle" id="menu-toggle">☰</button>
+            <button class="menu-toggle" id="menu-toggle">${svgIcon('menu', 22)}</button>
             <h1 id="page-title">${esc(title)}</h1>
           </div>
           <div class="actions">
-            <button class="icon-btn" id="notif-btn" title="Notifications">🔔<span class="notif-dot" id="notif-count" style="display:none"></span></button>
-            <button class="icon-btn" id="theme-btn" title="Toggle theme">${document.documentElement.dataset.theme === 'dark' ? '☀️' : '🌙'}</button>
+            <button class="icon-btn" id="notif-btn" title="Notifications">${svgIcon('bell')}<span class="notif-dot" id="notif-count" style="display:none"></span></button>
+            <button class="icon-btn" id="theme-btn" title="Toggle theme">${document.documentElement.dataset.theme === 'light' ? svgIcon('moon') : svgIcon('sun')}</button>
             <button class="btn secondary sm" onclick="logout()">Logout</button>
             <span class="avatar" id="topbar-avatar">${user.profileImage ? `<img src="${esc(user.profileImage)}" alt="">` : esc(user.name[0] || '?')}</span>
           </div>

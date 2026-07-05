@@ -4,13 +4,13 @@
 const user = requireRole('student');
 
 const SECTIONS = [
-  { id: 'dashboard', icon: '📊', label: 'Dashboard' },
-  { id: 'subjects', icon: '📚', label: 'My Subjects' },
-  { id: 'quizzes', icon: '📝', label: 'Take Quiz' },
-  { id: 'history', icon: '🕘', label: 'Quiz History' },
-  { id: 'announcements', icon: '📣', label: 'Announcements' },
-  { id: 'notifications', icon: '🔔', label: 'Notifications' },
-  { id: 'profile', icon: '👤', label: 'Profile' },
+  { id: 'dashboard', icon: 'dashboard', label: 'Dashboard' },
+  { id: 'subjects', icon: 'book', label: 'My Subjects' },
+  { id: 'quizzes', icon: 'edit', label: 'Take Quiz' },
+  { id: 'history', icon: 'clock', label: 'Quiz History' },
+  { id: 'announcements', icon: 'megaphone', label: 'Announcements' },
+  { id: 'notifications', icon: 'bell', label: 'Notifications' },
+  { id: 'profile', icon: 'user', label: 'Profile' },
 ];
 
 let _cdTimer = null; // handle for the live-countdown interval (declared before buildShell runs onNav)
@@ -66,10 +66,10 @@ function mountCountdowns(refresh) {
       const kind = el.dataset.cdkind; // 'start' | 'end'
       const diff = target - now;
       if (diff <= 0) {
-        if (kind === 'start') { startExpired = true; el.textContent = '🟢 Available now'; }
-        else el.textContent = '⏱️ Ended';
+        if (kind === 'start') { startExpired = true; el.textContent = 'Available now'; }
+        else el.textContent = 'Ended';
       } else {
-        el.textContent = (kind === 'start' ? '⏳ Starts in ' : '⏱️ Ends in ') + countdownStr(diff);
+        el.textContent = (kind === 'start' ? 'Starts in ' : 'Ends in ') + countdownStr(diff);
       }
     });
     if (startExpired && !refreshed && refresh) {
@@ -94,7 +94,7 @@ const quizCard = (z) => {
     ? `<span data-cd="${start.toISOString()}" data-cdkind="start"></span>`
     : isActive
     ? `<span data-cd="${end.toISOString()}" data-cdkind="end"></span>`
-    : '⏱️ Ended';
+    : 'Ended';
   return `
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
@@ -107,7 +107,7 @@ const quizCard = (z) => {
       <div style="font-size:.95rem;font-weight:700;color:var(--primary-hover);background:var(--primary-soft);border:1px solid var(--border);border-radius:10px;padding:8px 12px;margin:8px 0;font-variant-numeric:tabular-nums">
         ${countdown}
       </div>
-      <p style="font-size:.78rem;color:var(--text-muted)">🕐 ${fmtDate(z.startDate)} → ${fmtDate(z.endDate)}</p>
+      <p style="font-size:.78rem;color:var(--text-muted)">${fmtDate(z.startDate)} – ${fmtDate(z.endDate)}</p>
       <p style="font-size:.8rem;margin:6px 0 12px">
         Attempts: ${z.myAttempts?.used || 0}/${z.maxAttempts}
         ${z.myAttempts?.best ? ` · Best: <strong>${z.myAttempts.best}%</strong>` : ''}
@@ -143,10 +143,10 @@ async function renderDashboard(c) {
 
     c.innerHTML = `
       <div class="grid cols-4">
-        <div class="stat"><div class="icon">▶️</div><div><div class="value">${active.length}</div><div class="label">Available Quizzes</div></div></div>
-        <div class="stat"><div class="icon">⏳</div><div><div class="value">${upcoming.length}</div><div class="label">Upcoming Quizzes</div></div></div>
-        <div class="stat"><div class="icon">🏁</div><div><div class="value">${res.total}</div><div class="label">Completed</div></div></div>
-        <div class="stat"><div class="icon">📊</div><div><div class="value">${ov.overview.avgScore}%</div><div class="label">My Average</div></div></div>
+        <div class="stat"><div class="icon">${svgIcon('play', 22)}</div><div><div class="value">${active.length}</div><div class="label">Available Quizzes</div></div></div>
+        <div class="stat"><div class="icon">${svgIcon('clock', 22)}</div><div><div class="value">${upcoming.length}</div><div class="label">Upcoming Quizzes</div></div></div>
+        <div class="stat"><div class="icon">${svgIcon('flag', 22)}</div><div><div class="value">${res.total}</div><div class="label">Completed</div></div></div>
+        <div class="stat"><div class="icon">${svgIcon('chart', 22)}</div><div><div class="value">${ov.overview.avgScore}%</div><div class="label">My Average</div></div></div>
       </div>
       <div class="grid cols-2">
         <div class="card"><h3>My Performance</h3><div class="chart-box"><canvas id="ch-perf"></canvas></div></div>
@@ -160,8 +160,8 @@ async function renderDashboard(c) {
           </table></div>` : emptyHtml('No results yet')}
         </div>
       </div>
-      ${active.length ? `<h3 style="margin:6px 0 14px">🟢 Available now</h3><div class="grid cols-2">${active.map(quizCard).join('')}</div>` : ''}
-      ${upcoming.length ? `<h3 style="margin:18px 0 14px">⏳ Upcoming quizzes</h3><div class="grid cols-2">${upcoming.map(quizCard).join('')}</div>` : ''}`;
+      ${active.length ? `<h3 style="margin:6px 0 14px">Available now</h3><div class="grid cols-2">${active.map(quizCard).join('')}</div>` : ''}
+      ${upcoming.length ? `<h3 style="margin:18px 0 14px">Upcoming quizzes</h3><div class="grid cols-2">${upcoming.map(quizCard).join('')}</div>` : ''}`;
 
     mountCountdowns(() => renderDashboard(c));
 
@@ -175,7 +175,7 @@ async function renderDashboard(c) {
       type: 'line',
       data: {
         labels: hist.map((r) => r.quiz?.title?.slice(0, 14) || '-'),
-        datasets: [{ label: 'Score %', data: hist.map((r) => r.percentage), borderColor: '#facc15', backgroundColor: 'rgba(250,204,21,0.14)', fill: true, tension: 0.4, pointBackgroundColor: '#facc15' }],
+        datasets: [{ label: 'Score %', data: hist.map((r) => r.percentage), borderColor: '#818cf8', backgroundColor: 'rgba(99,102,241,0.16)', fill: true, tension: 0.4, pointBackgroundColor: '#818cf8' }],
       },
       options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 100 } } },
     }));
@@ -222,7 +222,7 @@ async function renderHistory(c) {
   const render = async () => {
     try {
       const { data } = await API.get('/attempts/results', { params: { page: state.page } });
-      c.innerHTML = `<div class="card"><h3>🕘 Quiz History</h3>
+      c.innerHTML = `<div class="card"><h3>Quiz History</h3>
         ${data.results.length ? `<div class="table-wrap"><table>
           <thead><tr><th>Quiz</th><th>Subject</th><th>Score</th><th>%</th><th>Grade</th><th>Result</th><th>Submitted</th><th></th></tr></thead>
           <tbody>${data.results.map((r) => `
@@ -248,7 +248,7 @@ async function renderAnnouncements(c) {
   c.innerHTML = loaderHtml;
   try {
     const { data } = await API.get('/announcements?limit=20');
-    c.innerHTML = `<div class="card"><h3>📣 Announcements</h3>
+    c.innerHTML = `<div class="card"><h3>Announcements</h3>
       ${data.announcements.length ? data.announcements.map((a) => `
         <div style="padding:14px 4px;border-bottom:1px solid var(--border)">
           <strong>${esc(a.title)}</strong>

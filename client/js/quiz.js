@@ -281,7 +281,7 @@ async function reportViolation(type, details) {
     if (data.autoSubmit) {
       finishAfterAutoSubmit(type);
     } else {
-      showWarning(`⚠️ ${labels[type] || type} (Warning ${warningCount}/${warningLimit})`);
+      showWarning(`${labels[type] || type} (Warning ${warningCount}/${warningLimit})`);
     }
   } catch (err) {
     // If reporting fails because the attempt is closed, stop the exam
@@ -307,7 +307,7 @@ function finishAfterAutoSubmit(reason) {
   submitted = true;
   cleanupExam();
   showDone({
-    title: '⛔ Exam Auto-Submitted',
+    title: 'Exam Auto-Submitted',
     message: `Your exam was automatically submitted due to: ${reason.replace(/-/g, ' ')}.`,
     isViolation: true,
   });
@@ -344,7 +344,7 @@ async function submitExam(reason, isAuto) {
     cleanupExam();
     const r = data.result;
     showDone({
-      title: r.passed ? '🎉 Exam Submitted' : 'Exam Submitted',
+      title: 'Exam Submitted',
       message: '',
       result: r,
     });
@@ -373,7 +373,7 @@ function showDone({ title, message, result, isViolation }) {
     ${result ? `
       <div class="grid cols-2" style="margin-top:18px;text-align:left">
         <div class="stat"><div><div class="value">${result.percentage}%</div><div class="label">Score (${result.score}/${result.totalMarks})</div></div></div>
-        <div class="stat"><div><div class="value">${esc(result.grade)}</div><div class="label">${result.passed ? '✅ Passed' : '❌ Failed'}</div></div></div>
+        <div class="stat"><div><div class="value">${esc(result.grade)}</div><div class="label">${result.passed ? 'Passed' : ' Failed'}</div></div></div>
       </div>` : ''}
     <button class="btn block" style="margin-top:22px" onclick="location.href='/student.html'">Back to Dashboard</button>`;
 }

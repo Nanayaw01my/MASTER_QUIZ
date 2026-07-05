@@ -4,16 +4,16 @@
 const user = requireRole('teacher');
 
 const SECTIONS = [
-  { id: 'dashboard', icon: '📊', label: 'Dashboard' },
-  { id: 'subjects', icon: '📚', label: 'My Subjects' },
-  { id: 'quizzes', icon: '📝', label: 'Quizzes' },
-  { id: 'questions', icon: '❓', label: 'Question Bank' },
-  { id: 'results', icon: '🏅', label: 'Results' },
-  { id: 'violations', icon: '⚠️', label: 'Violations' },
-  { id: 'students', icon: '🎓', label: 'Students' },
-  { id: 'analytics', icon: '📈', label: 'Analytics' },
-  { id: 'notifications', icon: '🔔', label: 'Notifications' },
-  { id: 'profile', icon: '👤', label: 'Profile' },
+  { id: 'dashboard', icon: 'dashboard', label: 'Dashboard' },
+  { id: 'subjects', icon: 'book', label: 'My Subjects' },
+  { id: 'quizzes', icon: 'file', label: 'Quizzes' },
+  { id: 'questions', icon: 'help', label: 'Question Bank' },
+  { id: 'results', icon: 'award', label: 'Results' },
+  { id: 'violations', icon: 'alert', label: 'Violations' },
+  { id: 'students', icon: 'cap', label: 'Students' },
+  { id: 'analytics', icon: 'chart', label: 'Analytics' },
+  { id: 'notifications', icon: 'bell', label: 'Notifications' },
+  { id: 'profile', icon: 'user', label: 'Profile' },
 ];
 
 buildShell({
@@ -50,10 +50,10 @@ async function renderDashboard(c) {
     const active = quiz.quizzes.filter((z) => z.status === 'published' && new Date(z.startDate) <= now && new Date(z.endDate) >= now);
     c.innerHTML = `
       <div class="grid cols-4">
-        <div class="stat"><div class="icon">📚</div><div><div class="value">${subj.total}</div><div class="label">Assigned Subjects</div></div></div>
-        <div class="stat"><div class="icon">📝</div><div><div class="value">${quiz.total}</div><div class="label">My Quizzes</div></div></div>
-        <div class="stat"><div class="icon">▶️</div><div><div class="value">${active.length}</div><div class="label">Active Quizzes</div></div></div>
-        <div class="stat"><div class="icon">📊</div><div><div class="value">${ov.overview.avgScore}%</div><div class="label">Average Score</div></div></div>
+        <div class="stat"><div class="icon">${svgIcon('book', 22)}</div><div><div class="value">${subj.total}</div><div class="label">Assigned Subjects</div></div></div>
+        <div class="stat"><div class="icon">${svgIcon('file', 22)}</div><div><div class="value">${quiz.total}</div><div class="label">My Quizzes</div></div></div>
+        <div class="stat"><div class="icon">${svgIcon('play', 22)}</div><div><div class="value">${active.length}</div><div class="label">Active Quizzes</div></div></div>
+        <div class="stat"><div class="icon">${svgIcon('chart', 22)}</div><div><div class="value">${ov.overview.avgScore}%</div><div class="label">Average Score</div></div></div>
       </div>
       <div class="card">
         <h3>My Subjects</h3>
@@ -111,7 +111,7 @@ async function renderStudents(c) {
     });
     const list = Object.values(students);
     c.innerHTML = `<div class="card">
-      <h3>🎓 Students (from quiz activity)</h3>
+      <h3>Students (from quiz activity)</h3>
       ${list.length ? `<div class="table-wrap"><table>
         <thead><tr><th>Name</th><th>Reg No.</th><th>Attempts</th><th>Best %</th></tr></thead>
         <tbody>${list.map((s) => `<tr><td>${esc(s.name)}</td><td>${esc(s.regNumber || '-')}</td><td>${s.attempts}</td><td><strong>${s.best}%</strong></td></tr>`).join('')}</tbody>

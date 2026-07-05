@@ -25,7 +25,7 @@ async function sectionQuestions(container) {
             : '<span class="badge green">approved</span>';
           return `
           <tr>
-            <td style="white-space:normal;max-width:320px">${q.source === 'ai' ? '✨ ' : ''}${esc(q.text.slice(0, 84))}${q.text.length > 84 ? '…' : ''}</td>
+            <td style="white-space:normal;max-width:320px">${q.source === 'ai' ? svgIcon('sparkle',13)+' ' : ''}${esc(q.text.slice(0, 84))}${q.text.length > 84 ? '…' : ''}</td>
             <td>${esc(q.subject?.code || '')}</td>
             <td><span class="badge blue">${esc(q.type)}</span></td>
             <td>${statusBadge}</td>
@@ -48,14 +48,14 @@ async function sectionQuestions(container) {
     <div class="card">
       <div class="toolbar">
         <select id="q-subject"><option value="">All subjects</option>${subjects.map((s) => `<option value="${s._id}">${esc(s.name)}</option>`).join('')}</select>
-        <select id="q-status"><option value="">Any status</option><option value="pending">⏳ Pending approval</option><option value="approved">✓ Approved</option><option value="rejected">✗ Rejected</option></select>
+        <select id="q-status"><option value="">Any status</option><option value="pending">Pending approval</option><option value="approved">Approved</option><option value="rejected">Rejected</option></select>
         <select id="q-diff"><option value="">Any difficulty</option><option>easy</option><option>medium</option><option>hard</option></select>
         <input id="q-search" placeholder="Search questions…">
         <span class="spacer"></span>
         <button class="btn secondary" id="q-approve-all">Approve pending</button>
         <button class="btn secondary" id="q-import">Import CSV</button>
         <button class="btn secondary" id="q-export">Export CSV</button>
-        <button class="btn" id="q-generate">✨ Generate with AI</button>
+        <button class="btn" id="q-generate">${svgIcon('sparkle')} Generate with AI</button>
         <button class="btn" id="q-new">+ New Question</button>
       </div>
       <div id="q-list"></div>
@@ -169,7 +169,7 @@ async function rejectQuestion(id) {
 // AI generation modal
 function generateQuestionsModal(subjects, refresh) {
   const m = openModal(`
-    <h2>✨ Generate Questions with AI</h2>
+    <h2>Generate Questions with AI</h2>
     <p class="hint" style="margin-bottom:14px">Claude will draft questions for the chosen subject and topic. They are saved as <strong>pending</strong> and the subject's teachers are asked to approve before students see them.</p>
     <div class="form-group"><label>Subject</label>
       <select id="ai-subject">${subjects.map((s) => `<option value="${s._id}">${esc(s.name)}</option>`).join('')}</select></div>
@@ -273,7 +273,7 @@ async function sectionQuizzes(container) {
             <td>${esc(z.classRef?.name || '')}</td>
             <td>${z.questionTotal ?? '-'}</td>
             <td>${z.duration}m</td>
-            <td style="font-size:.78rem">${fmtDate(z.startDate)}<br>→ ${fmtDate(z.endDate)}</td>
+            <td style="font-size:.78rem">${fmtDate(z.startDate)}<br>${fmtDate(z.endDate)}</td>
             <td><span class="badge ${z.status === 'published' ? 'green' : z.status === 'draft' ? 'amber' : 'gray'}">${esc(z.status)}</span></td>
             <td style="display:flex;gap:5px;flex-wrap:wrap">
               ${z.status === 'draft' ? `<button class="btn success sm" onclick="publishQuiz('${z._id}')">Publish</button>` : ''}
@@ -428,7 +428,7 @@ async function leaderboardModal(quizId) {
   try {
     const { data } = await API.get(`/attempts/leaderboard/${quizId}`);
     openModal(`
-      <h2>🏆 Leaderboard</h2>
+      <h2>Leaderboard</h2>
       ${data.leaderboard.length ? `<div class="table-wrap"><table>
         <thead><tr><th>#</th><th>Student</th><th>Best %</th><th>Attempts</th></tr></thead>
         <tbody>${data.leaderboard.map((r, i) => `
@@ -499,7 +499,7 @@ async function resultDetailModal(id) {
           <tr>
             <td style="white-space:normal;max-width:300px">${esc(a.question?.text?.slice(0, 100) || '-')}</td>
             <td>${esc(a.answer || '—')}${a.question?.correctAnswer && !a.correct ? `<div class="hint">Correct: ${esc(a.question.correctAnswer)}</div>` : ''}</td>
-            <td>${a.correct ? '<span class="badge green">✓</span>' : '<span class="badge red">✗</span>'}</td>
+            <td>${a.correct ? `<span class="badge green">${svgIcon('check',14)}</span>` : `<span class="badge red">${svgIcon('x',14)}</span>`}</td>
           </tr>`).join('')}</tbody></table></div>
       <div class="modal-actions">
         <button class="btn secondary" onclick="window.print()">Print / PDF</button>
@@ -516,7 +516,7 @@ async function sectionViolations(container) {
     list.innerHTML = loaderHtml;
     try {
       const { data } = await API.get('/violations', { params: { page: state.page } });
-      if (!data.violations.length) { list.innerHTML = emptyHtml('No violations recorded 🎉'); return; }
+      if (!data.violations.length) { list.innerHTML = emptyHtml('No violations recorded'); return; }
       list.innerHTML = `<div class="table-wrap"><table>
         <thead><tr><th>Evidence</th><th>Student</th><th>Quiz</th><th>Type</th><th>Details</th><th>When</th></tr></thead>
         <tbody>${data.violations.map((v) => `
@@ -534,14 +534,14 @@ async function sectionViolations(container) {
       renderPagination(document.getElementById('v-pages'), data.page, data.pages, (p) => { state.page = p; render(); });
     } catch (err) { list.innerHTML = emptyHtml(apiError(err)); }
   };
-  container.innerHTML = `<div class="card"><h3>⚠️ Proctoring Violations</h3><div id="v-list"></div></div>`;
+  container.innerHTML = `<div class="card"><h3>Proctoring Violations</h3><div id="v-list"></div></div>`;
   render();
 }
 
 /** Show a captured violation snapshot full-size. */
 function viewSnapshot(url) {
   openModal(`
-    <h2>📸 Captured Evidence</h2>
+    <h2>Captured Evidence</h2>
     <img src="${esc(url)}" style="width:100%;border-radius:12px;border:1px solid var(--border)">
     <div class="modal-actions">
       <a class="btn secondary" href="${esc(url)}" target="_blank" rel="noopener">Open original</a>
@@ -636,16 +636,16 @@ async function sectionAnalytics(container, { showTop = true } = {}) {
     destroyCharts();
     container.innerHTML = `
       <div class="grid cols-4">
-        <div class="stat"><div class="icon">📊</div><div><div class="value">${o.avgScore}%</div><div class="label">Average Score</div></div></div>
-        <div class="stat"><div class="icon">📝</div><div><div class="value">${o.totalAttempts}</div><div class="label">Total Attempts</div></div></div>
-        <div class="stat"><div class="icon">✅</div><div><div class="value">${o.passRate}%</div><div class="label">Pass Rate</div></div></div>
-        <div class="stat"><div class="icon">❌</div><div><div class="value">${o.failRate}%</div><div class="label">Fail Rate</div></div></div>
+        <div class="stat"><div class="icon">${svgIcon('chart',22)}</div><div><div class="value">${o.avgScore}%</div><div class="label">Average Score</div></div></div>
+        <div class="stat"><div class="icon">${svgIcon('file',22)}</div><div><div class="value">${o.totalAttempts}</div><div class="label">Total Attempts</div></div></div>
+        <div class="stat"><div class="icon">${svgIcon('checkCircle',22)}</div><div><div class="value">${o.passRate}%</div><div class="label">Pass Rate</div></div></div>
+        <div class="stat"><div class="icon">${svgIcon('xCircle',22)}</div><div><div class="value">${o.failRate}%</div><div class="label">Fail Rate</div></div></div>
       </div>
       <div class="grid cols-2">
         <div class="card"><h3>Subject Performance</h3><div class="chart-box"><canvas id="ch-subjects"></canvas></div></div>
         <div class="card"><h3>Monthly Activity</h3><div class="chart-box"><canvas id="ch-monthly"></canvas></div></div>
       </div>
-      ${showTop ? `<div class="card"><h3>🏆 Top Students</h3><div id="top-students">${
+      ${showTop ? `<div class="card"><h3>Top Students</h3><div id="top-students">${
         top.data.students.length ? `<div class="table-wrap"><table>
           <thead><tr><th>#</th><th>Student</th><th>Avg %</th><th>Attempts</th></tr></thead>
           <tbody>${top.data.students.map((s, i) => `<tr><td>${i + 1}</td><td>${esc(s.student.name)}</td><td><strong>${s.avgScore}%</strong></td><td>${s.attempts}</td></tr>`).join('')}</tbody>
@@ -662,7 +662,7 @@ async function sectionAnalytics(container, { showTop = true } = {}) {
       data: {
         labels: subjects.map((s) => s.subject),
         datasets: [
-          { label: 'Avg Score %', data: subjects.map((s) => s.avgScore), backgroundColor: 'rgba(250,204,21,0.85)', borderRadius: 8 },
+          { label: 'Avg Score %', data: subjects.map((s) => s.avgScore), backgroundColor: 'rgba(99,102,241,0.85)', borderRadius: 8 },
           { label: 'Pass Rate %', data: subjects.map((s) => s.passRate), backgroundColor: 'rgba(34,197,94,0.55)', borderRadius: 8 },
         ],
       },
@@ -674,8 +674,8 @@ async function sectionAnalytics(container, { showTop = true } = {}) {
       data: {
         labels: monthly.map((mm) => mm.month),
         datasets: [
-          { label: 'Attempts', data: monthly.map((mm) => mm.attempts), borderColor: '#facc15', backgroundColor: 'rgba(250,204,21,0.14)', fill: true, tension: 0.4, pointBackgroundColor: '#facc15' },
-          { label: 'Avg Score %', data: monthly.map((mm) => mm.avgScore), borderColor: '#f59e0b', tension: 0.4, pointBackgroundColor: '#f59e0b' },
+          { label: 'Attempts', data: monthly.map((mm) => mm.attempts), borderColor: '#818cf8', backgroundColor: 'rgba(99,102,241,0.16)', fill: true, tension: 0.4, pointBackgroundColor: '#818cf8' },
+          { label: 'Avg Score %', data: monthly.map((mm) => mm.avgScore), borderColor: '#22d3ee', tension: 0.4, pointBackgroundColor: '#22d3ee' },
         ],
       },
       options: { responsive: true, maintainAspectRatio: false },

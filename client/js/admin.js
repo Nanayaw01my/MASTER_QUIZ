@@ -4,22 +4,22 @@
 const user = requireRole('admin');
 
 const SECTIONS = [
-  { id: 'dashboard', icon: '📊', label: 'Dashboard' },
-  { id: 'teachers', icon: '👨‍🏫', label: 'Teachers' },
-  { id: 'students', icon: '🎓', label: 'Students' },
-  { id: 'subjects', icon: '📚', label: 'Subjects' },
-  { id: 'classes', icon: '🏫', label: 'Classes' },
-  { id: 'departments', icon: '🏢', label: 'Departments' },
-  { id: 'quizzes', icon: '📝', label: 'Quizzes' },
-  { id: 'questions', icon: '❓', label: 'Question Bank' },
-  { id: 'results', icon: '🏅', label: 'Results' },
-  { id: 'analytics', icon: '📈', label: 'Analytics' },
-  { id: 'violations', icon: '⚠️', label: 'Violations' },
-  { id: 'announcements', icon: '📣', label: 'Announcements' },
-  { id: 'logs', icon: '🗂️', label: 'Audit Logs' },
-  { id: 'notifications', icon: '🔔', label: 'Notifications' },
-  { id: 'settings', icon: '⚙️', label: 'Settings' },
-  { id: 'profile', icon: '👤', label: 'Profile' },
+  { id: 'dashboard', icon: 'dashboard', label: 'Dashboard' },
+  { id: 'teachers', icon: 'users', label: 'Teachers' },
+  { id: 'students', icon: 'cap', label: 'Students' },
+  { id: 'subjects', icon: 'book', label: 'Subjects' },
+  { id: 'classes', icon: 'school', label: 'Classes' },
+  { id: 'departments', icon: 'building', label: 'Departments' },
+  { id: 'quizzes', icon: 'file', label: 'Quizzes' },
+  { id: 'questions', icon: 'help', label: 'Question Bank' },
+  { id: 'results', icon: 'award', label: 'Results' },
+  { id: 'analytics', icon: 'chart', label: 'Analytics' },
+  { id: 'violations', icon: 'alert', label: 'Violations' },
+  { id: 'announcements', icon: 'megaphone', label: 'Announcements' },
+  { id: 'logs', icon: 'archive', label: 'Audit Logs' },
+  { id: 'notifications', icon: 'bell', label: 'Notifications' },
+  { id: 'settings', icon: 'settings', label: 'Settings' },
+  { id: 'profile', icon: 'user', label: 'Profile' },
 ];
 
 buildShell({
@@ -58,14 +58,14 @@ async function renderDashboard(c) {
     const s = data.stats;
     c.innerHTML = `
       <div class="grid cols-4">
-        <div class="stat"><div class="icon">👨‍🏫</div><div><div class="value">${s.teachers}</div><div class="label">Teachers</div></div></div>
-        <div class="stat"><div class="icon">🎓</div><div><div class="value">${s.students}</div><div class="label">Students</div></div></div>
-        <div class="stat"><div class="icon">📚</div><div><div class="value">${s.subjects}</div><div class="label">Subjects</div></div></div>
-        <div class="stat"><div class="icon">📝</div><div><div class="value">${s.quizzes}</div><div class="label">Quizzes</div></div></div>
-        <div class="stat"><div class="icon">▶️</div><div><div class="value">${s.activeQuizzes}</div><div class="label">Active Quizzes</div></div></div>
-        <div class="stat"><div class="icon">🏁</div><div><div class="value">${s.completedQuizzes}</div><div class="label">Completed Quizzes</div></div></div>
-        <div class="stat"><div class="icon">📊</div><div><div class="value">${s.avgScore}%</div><div class="label">Average Score</div></div></div>
-        <div class="stat"><div class="icon">✅</div><div><div class="value">${s.passRate}%</div><div class="label">Pass Rate</div></div></div>
+        <div class="stat"><div class="icon">${svgIcon('users', 22)}</div><div><div class="value">${s.teachers}</div><div class="label">Teachers</div></div></div>
+        <div class="stat"><div class="icon">${svgIcon('cap', 22)}</div><div><div class="value">${s.students}</div><div class="label">Students</div></div></div>
+        <div class="stat"><div class="icon">${svgIcon('book', 22)}</div><div><div class="value">${s.subjects}</div><div class="label">Subjects</div></div></div>
+        <div class="stat"><div class="icon">${svgIcon('file', 22)}</div><div><div class="value">${s.quizzes}</div><div class="label">Quizzes</div></div></div>
+        <div class="stat"><div class="icon">${svgIcon('play', 22)}</div><div><div class="value">${s.activeQuizzes}</div><div class="label">Active Quizzes</div></div></div>
+        <div class="stat"><div class="icon">${svgIcon('flag', 22)}</div><div><div class="value">${s.completedQuizzes}</div><div class="label">Completed Quizzes</div></div></div>
+        <div class="stat"><div class="icon">${svgIcon('chart', 22)}</div><div><div class="value">${s.avgScore}%</div><div class="label">Average Score</div></div></div>
+        <div class="stat"><div class="icon">${svgIcon('checkCircle', 22)}</div><div><div class="value">${s.passRate}%</div><div class="label">Pass Rate</div></div></div>
       </div>
       <div class="card">
         <h3>Recent Activity</h3>
@@ -83,13 +83,13 @@ async function renderDashboard(c) {
 async function renderSettings(c) {
   c.innerHTML = `
     <div class="card">
-      <h3>🖼️ Image Storage (Cloudinary)</h3>
+      <h3>Image Storage (Cloudinary)</h3>
       <p class="hint" style="margin-bottom:14px">Profile pictures, exam verification photos and violation snapshots are stored in Cloudinary. Use this to confirm your credentials work on the live server.</p>
       <button class="btn" id="test-cloud">Test Cloudinary connection</button>
       <div id="cloud-result" style="margin-top:14px;font-size:.92rem"></div>
     </div>
     <div class="card">
-      <h3>ℹ️ System</h3>
+      <h3>System</h3>
       <p style="font-size:.9rem"><strong>Logged in as:</strong> ${esc(user.name)} (${esc(user.email || 'admin')})</p>
       <p style="font-size:.9rem;margin-top:6px"><strong>Role:</strong> Administrator</p>
       <p class="hint" style="margin-top:10px">Tip: change your password from the Profile page after first login.</p>
@@ -102,7 +102,7 @@ async function renderSettings(c) {
     box.innerHTML = loaderHtml;
     try {
       const { data } = await API.get('/admin/cloudinary-test');
-      box.innerHTML = `<span class="badge ${data.success ? 'green' : 'red'}">${data.success ? 'Connected ✓' : 'Failed ✗'}</span> ${esc(data.message)}`;
+      box.innerHTML = `<span class="badge ${data.success ? 'green' : 'red'}">${data.success ? 'Connected' : 'Failed'}</span> ${esc(data.message)}`;
       toast(data.message, data.success ? 'success' : 'error', 6000);
     } catch (err) { box.innerHTML = `<span class="badge red">Error</span> ${esc(apiError(err))}`; }
     btn.disabled = false; btn.textContent = 'Test Cloudinary connection';
@@ -549,6 +549,6 @@ async function renderLogs(c) {
       renderPagination(document.getElementById('l-pages'), data.page, data.pages, (p) => { state.page = p; render(); });
     } catch (err) { list.innerHTML = emptyHtml(apiError(err)); }
   };
-  c.innerHTML = `<div class="card"><h3>🗂️ Audit Logs</h3><div id="l-list"></div></div>`;
+  c.innerHTML = `<div class="card"><h3>Audit Logs</h3><div id="l-list"></div></div>`;
   render();
 }
