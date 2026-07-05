@@ -5,7 +5,7 @@ const ApiError = require('../utils/ApiError');
 const asyncHandler = require('../utils/asyncHandler');
 const { logActivity } = require('../utils/helpers');
 const { signAccessToken, signRefreshToken, setRefreshCookie, clearRefreshCookie } = require('../utils/tokens');
-const { uploadImage: cloudUpload } = require('../config/cloudinary');
+const { uploadImage: cloudUpload, isConfigured: cloudinaryReady } = require('../config/cloudinary');
 
 const publicUser = (u) => ({
   id: u._id,
@@ -86,6 +86,7 @@ exports.updateProfile = asyncHandler(async (req, res) => {
 
 // PUT /api/auth/profile/picture  (multipart "image")
 exports.updateProfilePicture = asyncHandler(async (req, res) => {
+  if (!cloudinaryReady()) throw new ApiError(503, 'Image uploads are disabled (Cloudinary is not configured)');
   if (!req.file) throw new ApiError(400, 'Image file is required');
   const uploaded = await cloudUpload(req.file.buffer, 'quiz-master/profiles');
   const user = await User.findById(req.user._id);

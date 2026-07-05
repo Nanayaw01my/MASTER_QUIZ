@@ -4,7 +4,7 @@ const ApiError = require('../utils/ApiError');
 const asyncHandler = require('../utils/asyncHandler');
 const { logActivity, paginate, escapeRegex } = require('../utils/helpers');
 const { parseCsv, toCsv } = require('../utils/csv');
-const { uploadImage: cloudUpload } = require('../config/cloudinary');
+const { uploadImage: cloudUpload, isConfigured: cloudinaryReady } = require('../config/cloudinary');
 
 /** Teachers may only touch questions in subjects assigned to them. */
 const assertSubjectAccess = async (user, subjectId) => {
@@ -98,6 +98,7 @@ exports.deleteQuestion = asyncHandler(async (req, res) => {
 
 // POST /api/questions/:id/image  (multipart "image")
 exports.uploadQuestionImage = asyncHandler(async (req, res) => {
+  if (!cloudinaryReady()) throw new ApiError(503, 'Image uploads are disabled (Cloudinary is not configured)');
   if (!req.file) throw new ApiError(400, 'Image file is required');
   const question = await Question.findById(req.params.id);
   if (!question) throw new ApiError(404, 'Question not found');
