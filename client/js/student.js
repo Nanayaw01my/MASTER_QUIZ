@@ -104,11 +104,15 @@ async function renderDashboard(c) {
 
     const hist = [...res.results].reverse();
     destroyCharts();
+    const css = getComputedStyle(document.documentElement);
+    Chart.defaults.color = css.getPropertyValue('--text-muted');
+    Chart.defaults.borderColor = css.getPropertyValue('--border');
+    Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
     _charts.push(new Chart(document.getElementById('ch-perf'), {
       type: 'line',
       data: {
         labels: hist.map((r) => r.quiz?.title?.slice(0, 14) || '-'),
-        datasets: [{ label: 'Score %', data: hist.map((r) => r.percentage), borderColor: '#4f46e5', backgroundColor: 'rgba(79,70,229,0.15)', fill: true, tension: 0.35 }],
+        datasets: [{ label: 'Score %', data: hist.map((r) => r.percentage), borderColor: '#facc15', backgroundColor: 'rgba(250,204,21,0.14)', fill: true, tension: 0.4, pointBackgroundColor: '#facc15' }],
       },
       options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 100 } } },
     }));

@@ -555,16 +555,18 @@ async function sectionAnalytics(container, { showTop = true } = {}) {
         </table></div>` : emptyHtml('No data yet')
       }</div></div>` : ''}`;
 
-    const textColor = getComputedStyle(document.documentElement).getPropertyValue('--text-muted');
-    Chart.defaults.color = textColor;
+    const css = getComputedStyle(document.documentElement);
+    Chart.defaults.color = css.getPropertyValue('--text-muted');
+    Chart.defaults.borderColor = css.getPropertyValue('--border');
+    Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
     const subjects = sub.data.subjects;
     _charts.push(new Chart(document.getElementById('ch-subjects'), {
       type: 'bar',
       data: {
         labels: subjects.map((s) => s.subject),
         datasets: [
-          { label: 'Avg Score %', data: subjects.map((s) => s.avgScore), backgroundColor: 'rgba(79,70,229,0.7)', borderRadius: 6 },
-          { label: 'Pass Rate %', data: subjects.map((s) => s.passRate), backgroundColor: 'rgba(22,163,74,0.6)', borderRadius: 6 },
+          { label: 'Avg Score %', data: subjects.map((s) => s.avgScore), backgroundColor: 'rgba(250,204,21,0.85)', borderRadius: 8 },
+          { label: 'Pass Rate %', data: subjects.map((s) => s.passRate), backgroundColor: 'rgba(34,197,94,0.55)', borderRadius: 8 },
         ],
       },
       options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 100 } } },
@@ -575,8 +577,8 @@ async function sectionAnalytics(container, { showTop = true } = {}) {
       data: {
         labels: monthly.map((mm) => mm.month),
         datasets: [
-          { label: 'Attempts', data: monthly.map((mm) => mm.attempts), borderColor: '#4f46e5', backgroundColor: 'rgba(79,70,229,0.15)', fill: true, tension: 0.35 },
-          { label: 'Avg Score %', data: monthly.map((mm) => mm.avgScore), borderColor: '#16a34a', tension: 0.35 },
+          { label: 'Attempts', data: monthly.map((mm) => mm.attempts), borderColor: '#facc15', backgroundColor: 'rgba(250,204,21,0.14)', fill: true, tension: 0.4, pointBackgroundColor: '#facc15' },
+          { label: 'Avg Score %', data: monthly.map((mm) => mm.avgScore), borderColor: '#f59e0b', tension: 0.4, pointBackgroundColor: '#f59e0b' },
         ],
       },
       options: { responsive: true, maintainAspectRatio: false },

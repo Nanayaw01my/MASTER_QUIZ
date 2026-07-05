@@ -4,7 +4,8 @@
 
 // ---------------- Theme ----------------
 function initTheme() {
-  const saved = localStorage.getItem('qm_theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  // Dark is the flagship look for the black & gold theme
+  const saved = localStorage.getItem('qm_theme') || 'dark';
   document.documentElement.dataset.theme = saved;
 }
 function toggleTheme() {
