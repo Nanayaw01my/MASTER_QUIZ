@@ -17,70 +17,68 @@
 
       <!-- Login form -->
       <form id="login-form">
-        <div class="form-group">
-          <label for="email">Email</label>
-          <input type="email" id="email" required autocomplete="email" placeholder="you@school.com">
+        <div class="field">
+          <span class="field-icon">✉️</span>
+          <input type="email" id="email" required autocomplete="email" placeholder="Email address">
         </div>
-        <div class="form-group">
-          <label for="password">Password</label>
-          <input type="password" id="password" required autocomplete="current-password" placeholder="••••••••">
+        <div class="field">
+          <span class="field-icon">🔒</span>
+          <input type="password" id="password" required autocomplete="current-password" placeholder="Password">
+          <button type="button" class="field-toggle" data-target="password">Show</button>
         </div>
-        <button type="submit" class="btn block" id="login-btn">Sign In</button>
-        <p style="text-align:center;margin-top:14px;font-size:.85rem">
+        <button type="submit" class="btn block auth-btn" id="login-btn">Sign In</button>
+        <div class="auth-links">
           <a href="#" id="show-forgot">Forgot password?</a>
-        </p>
-        <p style="text-align:center;margin-top:6px;font-size:.85rem">
-          New student? <a href="#" id="show-register">Create an account</a>
-        </p>
+          <span>New student? <a href="#" id="show-register">Create an account</a></span>
+        </div>
       </form>
 
       <!-- Student registration form -->
       <form id="register-form" style="display:none">
-        <div class="form-group">
-          <label for="r-name">Full name</label>
-          <input type="text" id="r-name" required placeholder="Your full name">
+        <div class="field">
+          <span class="field-icon">👤</span>
+          <input type="text" id="r-name" required placeholder="Full name">
         </div>
-        <div class="form-group">
-          <label for="r-email">Email</label>
-          <input type="email" id="r-email" required placeholder="you@school.com">
+        <div class="field">
+          <span class="field-icon">✉️</span>
+          <input type="email" id="r-email" required placeholder="Email address">
         </div>
-        <div class="form-group">
-          <label for="r-class">Class</label>
-          <select id="r-class" required><option value="">Loading classes…</option></select>
+        <div class="field">
+          <span class="field-icon">🏫</span>
+          <select id="r-class" required><option value="">Select your class…</option></select>
         </div>
-        <div class="form-group">
-          <label for="r-reg">Registration / index number <span style="opacity:.6">(optional)</span></label>
-          <input type="text" id="r-reg" placeholder="e.g. STU2026001">
+        <div class="field">
+          <span class="field-icon">🎫</span>
+          <input type="text" id="r-reg" placeholder="Registration / index number (optional)">
         </div>
-        <div class="form-group">
-          <label for="r-password">Password</label>
-          <input type="password" id="r-password" required placeholder="At least 6 characters">
+        <div class="field">
+          <span class="field-icon">🔒</span>
+          <input type="password" id="r-password" required placeholder="Password (min 6)">
+          <button type="button" class="field-toggle" data-target="r-password">Show</button>
         </div>
-        <button type="submit" class="btn block" id="register-btn">Create Account</button>
-        <p style="text-align:center;margin-top:14px;font-size:.85rem">
-          <a href="#" id="show-login-2">← Back to login</a>
-        </p>
+        <button type="submit" class="btn block auth-btn" id="register-btn">Create Account</button>
+        <div class="auth-links"><a href="#" id="show-login-2">← Back to login</a></div>
       </form>
 
       <!-- Forgot password form -->
       <form id="forgot-form" style="display:none">
-        <div class="form-group">
-          <label for="f-email">Email</label>
-          <input type="email" id="f-email" required placeholder="you@school.com">
+        <div class="field">
+          <span class="field-icon">✉️</span>
+          <input type="email" id="f-email" required placeholder="Email address">
         </div>
-        <button type="submit" class="btn block">Request Reset Token</button>
-        <div class="form-group" style="margin-top:18px">
-          <label for="f-token">Reset token</label>
+        <button type="submit" class="btn block auth-btn">Request Reset Token</button>
+        <div class="auth-divider">then reset</div>
+        <div class="field">
+          <span class="field-icon">🔑</span>
           <input type="text" id="f-token" placeholder="Paste your reset token">
         </div>
-        <div class="form-group">
-          <label for="f-newpass">New password</label>
-          <input type="password" id="f-newpass" placeholder="At least 6 characters">
+        <div class="field">
+          <span class="field-icon">🔒</span>
+          <input type="password" id="f-newpass" placeholder="New password (min 6 characters)">
+          <button type="button" class="field-toggle" data-target="f-newpass">Show</button>
         </div>
-        <button type="button" class="btn success block" id="do-reset">Reset Password</button>
-        <p style="text-align:center;margin-top:14px;font-size:.85rem">
-          <a href="#" id="show-login">← Back to login</a>
-        </p>
+        <button type="button" class="btn success block auth-btn" id="do-reset">Reset Password</button>
+        <div class="auth-links"><a href="#" id="show-login">← Back to login</a></div>
       </form>
     </div>
   </div>

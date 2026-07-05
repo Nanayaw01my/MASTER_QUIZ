@@ -1,5 +1,16 @@
 /* Login / forgot-password page logic */
 
+// Show/hide password toggles
+document.querySelectorAll('.field-toggle').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    const input = document.getElementById(btn.dataset.target);
+    if (!input) return;
+    const show = input.type === 'password';
+    input.type = show ? 'text' : 'password';
+    btn.textContent = show ? 'Hide' : 'Show';
+  });
+});
+
 // Already logged in? Go straight to the dashboard.
 (() => {
   const u = Auth.user;
