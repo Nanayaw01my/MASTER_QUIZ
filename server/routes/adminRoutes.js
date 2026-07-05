@@ -5,6 +5,7 @@ const { protect, authorize } = require('../middleware/auth');
 router.use(protect, authorize('admin'));
 
 router.get('/dashboard', admin.dashboard);
+router.get('/cloudinary-test', admin.testCloudinary);
 
 router.get('/users', admin.listUsers);
 router.post('/users', admin.createUser);

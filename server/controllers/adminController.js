@@ -9,6 +9,29 @@ const ActivityLog = require('../models/ActivityLog');
 const ApiError = require('../utils/ApiError');
 const asyncHandler = require('../utils/asyncHandler');
 const { logActivity, paginate, escapeRegex, notify } = require('../utils/helpers');
+const { isConfigured: cloudinaryReady, uploadImage: cloudUpload, deleteImage } = require('../config/cloudinary');
+
+// GET /api/admin/cloudinary-test  - verify image storage works (runs on the live server)
+exports.testCloudinary = asyncHandler(async (req, res) => {
+  const present = {
+    CLOUDINARY_CLOUD_NAME: !!process.env.CLOUDINARY_CLOUD_NAME,
+    CLOUDINARY_API_KEY: !!process.env.CLOUDINARY_API_KEY,
+    CLOUDINARY_API_SECRET: !!process.env.CLOUDINARY_API_SECRET,
+  };
+  if (!cloudinaryReady()) {
+    const missing = Object.keys(present).filter((k) => !present[k]);
+    return res.json({ success: false, message: `Missing Cloudinary variable(s): ${missing.join(', ')}`, present });
+  }
+  // 1x1 transparent PNG
+  const img = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M8AAAMBAQDJ/pLvAAAAAElFTkSuQmCC';
+  try {
+    const r = await cloudUpload(img, 'quiz-master/test');
+    await deleteImage(r.publicId);
+    res.json({ success: true, message: 'Cloudinary is connected — photos will be saved.', present });
+  } catch (err) {
+    res.json({ success: false, message: `Cloudinary rejected the upload: ${err.message}`, present });
+  }
+});
 
 // ---------------------------------------------------------------- Dashboard
 
