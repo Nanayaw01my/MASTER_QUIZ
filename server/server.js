@@ -12,7 +12,7 @@ const connectDB = require('./config/db');
 const { notFound, errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
-connectDB();
+connectDB().then(() => require('./utils/ensureAdmin')());
 
 // Render/Railway run behind a reverse proxy
 app.set('trust proxy', 1);
