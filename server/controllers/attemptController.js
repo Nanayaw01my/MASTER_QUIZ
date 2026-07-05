@@ -134,9 +134,15 @@ exports.startAttempt = asyncHandler(async (req, res) => {
     }
   }
 
+  // Store the verification photo, but never block the exam if Cloudinary fails
+  // (bad credentials, quota, network) - the attempt must still be able to start.
   let faceImageStart;
   if (faceImage && cloudinaryReady()) {
-    faceImageStart = await cloudUpload(faceImage, 'quiz-master/proctoring');
+    try {
+      faceImageStart = await cloudUpload(faceImage, 'quiz-master/proctoring');
+    } catch (err) {
+      console.error(`Start face image upload failed: ${err.message}`);
+    }
   }
 
   // Build the served question set (randomized server-side)
