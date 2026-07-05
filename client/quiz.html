@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quiz Master — Examination</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <!-- ============ Pre-exam verification screen ============ -->
+  <div id="precheck" class="exam-shell" style="max-width:640px;padding-top:40px">
+    <div class="card" style="text-align:center">
+      <h2 style="margin-bottom:6px">🎥 Exam Verification</h2>
+      <p style="color:var(--text-muted);font-size:.9rem" id="pc-quiz-title">Loading quiz…</p>
+
+      <div class="warning-banner" id="pc-error" style="display:none;margin-top:14px"></div>
+
+      <div class="webcam-box" style="max-width:420px;margin:18px auto">
+        <video id="pc-video" autoplay muted playsinline></video>
+        <canvas class="overlay" id="pc-overlay"></canvas>
+      </div>
+      <div class="webcam-status" style="justify-content:center">
+        <span class="dot" id="pc-dot"></span><span id="pc-status">Waiting for camera permission…</span>
+      </div>
+
+      <ul style="text-align:left;font-size:.85rem;color:var(--text-muted);margin:16px auto;max-width:420px;line-height:1.9">
+        <li>Allow webcam access — it stays ON for the whole exam.</li>
+        <li>Keep your face inside the circle at all times.</li>
+        <li>Only ONE person may be visible. No phones.</li>
+        <li>Do not switch tabs, minimize, or exit fullscreen — the exam will auto-submit.</li>
+      </ul>
+
+      <button class="btn block" id="pc-start" disabled>Verify Face &amp; Start Exam</button>
+      <button class="btn secondary block" style="margin-top:10px" onclick="location.href='/student.html'">Cancel</button>
+    </div>
+  </div>
+
+  <!-- ============ Exam screen ============ -->
+  <div id="exam" class="exam-shell" style="display:none">
+    <div class="warning-banner" id="warn-banner"></div>
+
+    <div class="exam-topbar">
+      <div>
+        <strong id="ex-title"></strong>
+        <div class="hint" id="ex-progress-label"></div>
+      </div>
+      <div class="progressbar" style="flex:1;max-width:280px"><div id="ex-progress" style="width:0%"></div></div>
+      <div class="timer" id="ex-timer">--:--</div>
+      <button class="btn success" id="ex-submit">Submit Exam</button>
+    </div>
+
+    <div class="exam-grid">
+      <div>
+        <div class="card question-card" id="ex-question">Loading…</div>
+        <div style="display:flex;justify-content:space-between;gap:10px">
+          <button class="btn secondary" id="ex-prev">← Previous</button>
+          <button class="btn secondary" id="ex-next">Next →</button>
+        </div>
+      </div>
+      <div>
+        <div class="card" style="padding:12px">
+          <div class="webcam-box">
+            <video id="ex-video" autoplay muted playsinline></video>
+            <canvas class="overlay" id="ex-overlay"></canvas>
+          </div>
+          <div class="webcam-status"><span class="dot" id="ex-dot"></span><span id="ex-cam-status">Monitoring…</span></div>
+          <div class="hint" id="ex-warnings" style="padding:0 10px 8px">Warnings: 0</div>
+        </div>
+        <div class="card">
+          <h3 style="font-size:.9rem">Questions</h3>
+          <div class="qnav" id="ex-qnav"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ Result screen ============ -->
+  <div id="done" class="exam-shell" style="display:none;max-width:560px;padding-top:60px">
+    <div class="card" style="text-align:center" id="done-card"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.7.2/dist/axios.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.13/dist/face-api.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js"></script>
+  <script src="/js/api.js"></script>
+  <script src="/js/ui.js"></script>
+  <script src="/js/proctor.js"></script>
+  <script src="/js/quiz.js"></script>
+</body>
+</html>
