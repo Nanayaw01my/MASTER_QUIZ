@@ -7,13 +7,14 @@ const ApiError = require('../utils/ApiError');
 const asyncHandler = require('../utils/asyncHandler');
 const { notify, paginate } = require('../utils/helpers');
 const { finalizeAttempt } = require('./attemptController');
+const { uploadImage: cloudUpload, isConfigured: cloudinaryReady } = require('../config/cloudinary');
 
 // Violations that end the exam instantly (no warning allowance)
 const INSTANT_SUBMIT = ['tab-switch', 'window-blur', 'camera-disconnected', 'camera-blocked'];
 
-// POST /api/violations  { attemptId, type, details? }  (student, during exam)
+// POST /api/violations  { attemptId, type, details?, snapshot? }  (student, during exam)
 exports.reportViolation = asyncHandler(async (req, res) => {
-  const { attemptId, type, details } = req.body;
+  const { attemptId, type, details, snapshot } = req.body;
   if (!Violation.TYPES.includes(type)) throw new ApiError(400, 'Invalid violation type');
 
   const attempt = await Attempt.findOne({ _id: attemptId, student: req.user._id });
@@ -23,12 +24,24 @@ exports.reportViolation = asyncHandler(async (req, res) => {
   }
 
   const quiz = await Quiz.findById(attempt.quiz);
+
+  // Store the webcam snapshot (evidence) when one was captured and Cloudinary is set up
+  let snapshotData;
+  if (snapshot && cloudinaryReady()) {
+    try {
+      snapshotData = await cloudUpload(snapshot, 'quiz-master/violations');
+    } catch (err) {
+      console.error(`Violation snapshot upload failed: ${err.message}`);
+    }
+  }
+
   await Violation.create({
     student: req.user._id,
     quiz: attempt.quiz,
     attempt: attempt._id,
     type,
     details: String(details || '').slice(0, 300),
+    snapshot: snapshotData,
   });
 
   attempt.warningsCount += 1;

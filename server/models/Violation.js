@@ -20,6 +20,8 @@ const violationSchema = new mongoose.Schema(
     attempt: { type: mongoose.Schema.Types.ObjectId, ref: 'Attempt' }, // absent for pre-start verification failures
     type: { type: String, enum: VIOLATION_TYPES, required: true },
     details: { type: String, trim: true },
+    // Webcam snapshot captured at the moment of a visual violation (phone, extra face…)
+    snapshot: { url: String, publicId: String },
     occurredAt: { type: Date, default: Date.now },
   },
   { timestamps: true }

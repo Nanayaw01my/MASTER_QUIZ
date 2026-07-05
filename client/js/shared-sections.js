@@ -435,9 +435,12 @@ async function sectionViolations(container) {
       const { data } = await API.get('/violations', { params: { page: state.page } });
       if (!data.violations.length) { list.innerHTML = emptyHtml('No violations recorded 🎉'); return; }
       list.innerHTML = `<div class="table-wrap"><table>
-        <thead><tr><th>Student</th><th>Quiz</th><th>Type</th><th>Details</th><th>When</th></tr></thead>
+        <thead><tr><th>Evidence</th><th>Student</th><th>Quiz</th><th>Type</th><th>Details</th><th>When</th></tr></thead>
         <tbody>${data.violations.map((v) => `
           <tr>
+            <td>${v.snapshot?.url
+              ? `<img src="${esc(v.snapshot.url)}" onclick="viewSnapshot('${esc(v.snapshot.url)}')" style="width:56px;height:42px;object-fit:cover;border-radius:8px;cursor:pointer;border:1px solid var(--border)" title="Click to enlarge">`
+              : '<span class="hint">—</span>'}</td>
             <td>${esc(v.student?.name || '-')}</td>
             <td>${esc(v.quiz?.title || '-')}</td>
             <td><span class="badge red">${esc(v.type)}</span></td>
@@ -450,6 +453,17 @@ async function sectionViolations(container) {
   };
   container.innerHTML = `<div class="card"><h3>⚠️ Proctoring Violations</h3><div id="v-list"></div></div>`;
   render();
+}
+
+/** Show a captured violation snapshot full-size. */
+function viewSnapshot(url) {
+  openModal(`
+    <h2>📸 Captured Evidence</h2>
+    <img src="${esc(url)}" style="width:100%;border-radius:12px;border:1px solid var(--border)">
+    <div class="modal-actions">
+      <a class="btn secondary" href="${esc(url)}" target="_blank" rel="noopener">Open original</a>
+      <button class="btn" onclick="closeModal()">Close</button>
+    </div>`, { wide: true });
 }
 
 // ---------------------------------------------------------- Profile

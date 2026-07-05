@@ -7,8 +7,11 @@ const Proctor = {
   stream: null,
   video: null,
   overlay: null,
-  faceModelReady: false,
-  objectModel: null,
+  faceModelReady: false,      // tiny detector loaded (enough to count/position faces)
+  recognitionReady: false,    // landmark + recognition loaded (needed for identity descriptor)
+  recognitionPromise: null,
+  objectModel: null,          // coco-ssd (phone detection), loads in background
+  objectPromise: null,
   running: false,
   faceLoop: null,
   phoneLoop: null,
@@ -17,20 +20,36 @@ const Proctor = {
 
   MODEL_URL: 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.13/model',
 
-  /** Load AI models (face detector + recognizer, then coco-ssd for phones). */
+  /**
+   * Load AI models with minimal blocking. Only the tiny face detector is
+   * awaited (small + fast) so the camera preview and verification can begin
+   * almost immediately; the heavier recognition and phone-detection models
+   * finish downloading in the background and are picked up when ready.
+   */
   async loadModels(onProgress = () => {}) {
-    onProgress('Loading face detection model…');
+    onProgress('Loading face detector…');
     await faceapi.nets.tinyFaceDetector.loadFromUri(this.MODEL_URL);
-    await faceapi.nets.faceLandmark68Net.loadFromUri(this.MODEL_URL);
-    await faceapi.nets.faceRecognitionNet.loadFromUri(this.MODEL_URL);
     this.faceModelReady = true;
-    onProgress('Loading object detection model…');
-    try {
-      this.objectModel = await cocoSsd.load({ base: 'lite_mobilenet_v2' });
-    } catch (e) {
-      console.warn('Phone detection model failed to load:', e);
-    }
-    onProgress('Models ready');
+    onProgress('Camera ready — position your face');
+
+    // Identity models (needed only at the moment the exam starts)
+    this.recognitionPromise = Promise.all([
+      faceapi.nets.faceLandmark68Net.loadFromUri(this.MODEL_URL),
+      faceapi.nets.faceRecognitionNet.loadFromUri(this.MODEL_URL),
+    ]).then(() => { this.recognitionReady = true; })
+      .catch((e) => console.warn('Face recognition models failed to load:', e));
+
+    // Phone detector — monitoring starts using it the moment it finishes
+    this.objectPromise = cocoSsd.load({ base: 'lite_mobilenet_v2' })
+      .then((m) => { this.objectModel = m; })
+      .catch((e) => console.warn('Phone detection model failed to load:', e));
+  },
+
+  /** Ensure the identity (descriptor) models are ready before verifying. */
+  async ensureRecognition() {
+    if (this.recognitionReady) return true;
+    if (this.recognitionPromise) await this.recognitionPromise;
+    return this.recognitionReady;
   },
 
   /** Request webcam and bind it to a <video>. */
@@ -148,18 +167,17 @@ const Proctor = {
       } catch (e) { /* detection hiccup - skip frame */ }
     }, 1600);
 
-    // Phone detection loop (~every 2.5s). A shorter cooldown means a phone
-    // held in view accrues warnings quickly and reaches the auto-submit limit.
-    if (this.objectModel) {
-      this.phoneLoop = setInterval(async () => {
-        if (!this.running || !this.video || this.video.readyState < 2) return;
-        try {
-          const preds = await this.objectModel.detect(this.video, 5);
-          const phone = preds.find((p) => p.class === 'cell phone' && p.score > 0.5);
-          if (phone) throttled('phone-detected', `Confidence ${(phone.score * 100).toFixed(0)}%`, 5000);
-        } catch (e) { /* skip frame */ }
-      }, 2500);
-    }
+    // Phone detection loop (~every 2.5s). Runs even if the phone model is
+    // still downloading — it activates automatically once objectModel is set.
+    // A short cooldown means a visible phone reaches the auto-submit limit fast.
+    this.phoneLoop = setInterval(async () => {
+      if (!this.running || !this.objectModel || !this.video || this.video.readyState < 2) return;
+      try {
+        const preds = await this.objectModel.detect(this.video, 5);
+        const phone = preds.find((p) => p.class === 'cell phone' && p.score > 0.5);
+        if (phone) throttled('phone-detected', `Confidence ${(phone.score * 100).toFixed(0)}%`, 5000);
+      } catch (e) { /* skip frame */ }
+    }, 2500);
   },
 
   stop() {

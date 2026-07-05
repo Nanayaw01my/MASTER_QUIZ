@@ -41,11 +41,13 @@ const enterFullscreen = async () => {
   }
 
   try {
-    $('pc-status').textContent = 'Requesting camera…';
+    // Start the model download and the camera prompt at the same time so the
+    // models stream in while the student is granting camera permission.
+    $('pc-status').textContent = 'Starting camera & loading AI…';
+    const modelsReady = Proctor.loadModels((msg) => ($('pc-status').textContent = msg));
     await Proctor.startCamera($('pc-video'), $('pc-overlay'));
     $('pc-dot').classList.add('ok');
-    $('pc-status').textContent = 'Loading AI models…';
-    await Proctor.loadModels((msg) => ($('pc-status').textContent = msg));
+    await modelsReady; // resolves as soon as the fast face detector is ready
 
     // Live preview loop until the exam starts
     const previewLoop = setInterval(async () => {
@@ -80,6 +82,8 @@ $('pc-start').onclick = async () => {
   $('pc-start').disabled = true;
   $('pc-start').textContent = 'Verifying…';
   try {
+    // The identity models may still be finishing in the background
+    await Proctor.ensureRecognition();
     // Final verification: exactly one face + capture photo + descriptor
     const det = await Proctor.detectFaces(true);
     if (det.count !== 1) throw new Error('Exactly one face must be visible to start');
@@ -263,8 +267,14 @@ async function reportViolation(type, details) {
     'camera-disconnected': 'Camera disconnected.',
     'camera-blocked': 'Camera blocked.',
   };
+  // Capture webcam evidence for visual violations so staff can review it
+  let snapshot;
+  if (['phone-detected', 'multiple-faces', 'face-outside-circle'].includes(type)) {
+    try { snapshot = Proctor.snapshot(); } catch { /* camera may be gone */ }
+  }
+
   try {
-    const { data } = await API.post('/violations', { attemptId: attempt.id, type, details });
+    const { data } = await API.post('/violations', { attemptId: attempt.id, type, details, snapshot });
     warningCount = data.warnings ?? warningCount + 1;
     warningLimit = data.warningLimit ?? warningLimit;
     updateWarningsUI();
