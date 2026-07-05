@@ -18,6 +18,7 @@ const SECTIONS = [
   { id: 'announcements', icon: '📣', label: 'Announcements' },
   { id: 'logs', icon: '🗂️', label: 'Audit Logs' },
   { id: 'notifications', icon: '🔔', label: 'Notifications' },
+  { id: 'settings', icon: '⚙️', label: 'Settings' },
   { id: 'profile', icon: '👤', label: 'Profile' },
 ];
 
@@ -43,6 +44,7 @@ buildShell({
       case 'announcements': return renderAnnouncements(c);
       case 'logs': return renderLogs(c);
       case 'notifications': return renderNotifications(c);
+      case 'settings': return renderSettings(c);
       case 'profile': return sectionProfile(c);
     }
   },
@@ -73,26 +75,38 @@ async function renderDashboard(c) {
             <tr><td>${esc(a.user?.name || 'System')}</td><td><span class="badge blue">${esc(a.action)}</span></td>
             <td style="white-space:normal">${esc(a.details || '')}</td><td style="font-size:.8rem">${fmtDate(a.createdAt)}</td></tr>`).join('')}
           </tbody></table></div>` : emptyHtml('No activity yet')}
-      </div>
-      <div class="card">
-        <h3>🖼️ Image Storage (Cloudinary)</h3>
-        <p class="hint" style="margin-bottom:12px">Check whether profile pictures, exam verification photos and violation snapshots can be saved.</p>
-        <button class="btn secondary" id="test-cloud">Test Cloudinary connection</button>
-        <div id="cloud-result" style="margin-top:12px;font-size:.9rem"></div>
       </div>`;
-
-    const btn = document.getElementById('test-cloud');
-    btn.onclick = async () => {
-      btn.disabled = true; btn.textContent = 'Testing…';
-      const box = document.getElementById('cloud-result');
-      try {
-        const { data } = await API.get('/admin/cloudinary-test');
-        box.innerHTML = `<span class="badge ${data.success ? 'green' : 'red'}">${data.success ? 'Connected ✓' : 'Failed ✗'}</span> ${esc(data.message)}`;
-        toast(data.message, data.success ? 'success' : 'error', 6000);
-      } catch (err) { box.innerHTML = `<span class="badge red">Error</span> ${esc(apiError(err))}`; }
-      btn.disabled = false; btn.textContent = 'Test Cloudinary connection';
-    };
   } catch (err) { c.innerHTML = emptyHtml(apiError(err)); }
+}
+
+// ---------------------------------------------------------- Settings
+async function renderSettings(c) {
+  c.innerHTML = `
+    <div class="card">
+      <h3>🖼️ Image Storage (Cloudinary)</h3>
+      <p class="hint" style="margin-bottom:14px">Profile pictures, exam verification photos and violation snapshots are stored in Cloudinary. Use this to confirm your credentials work on the live server.</p>
+      <button class="btn" id="test-cloud">Test Cloudinary connection</button>
+      <div id="cloud-result" style="margin-top:14px;font-size:.92rem"></div>
+    </div>
+    <div class="card">
+      <h3>ℹ️ System</h3>
+      <p style="font-size:.9rem"><strong>Logged in as:</strong> ${esc(user.name)} (${esc(user.email || 'admin')})</p>
+      <p style="font-size:.9rem;margin-top:6px"><strong>Role:</strong> Administrator</p>
+      <p class="hint" style="margin-top:10px">Tip: change your password from the Profile page after first login.</p>
+    </div>`;
+
+  const btn = document.getElementById('test-cloud');
+  btn.onclick = async () => {
+    btn.disabled = true; btn.textContent = 'Testing…';
+    const box = document.getElementById('cloud-result');
+    box.innerHTML = loaderHtml;
+    try {
+      const { data } = await API.get('/admin/cloudinary-test');
+      box.innerHTML = `<span class="badge ${data.success ? 'green' : 'red'}">${data.success ? 'Connected ✓' : 'Failed ✗'}</span> ${esc(data.message)}`;
+      toast(data.message, data.success ? 'success' : 'error', 6000);
+    } catch (err) { box.innerHTML = `<span class="badge red">Error</span> ${esc(apiError(err))}`; }
+    btn.disabled = false; btn.textContent = 'Test Cloudinary connection';
+  };
 }
 
 // ---------------------------------------------------------- Users (teachers/students)
